@@ -1,6 +1,7 @@
 import * as chai from 'chai';
 import  groupsData  from "../data/groups.js";
 import chaiAsPromised from 'chai-as-promised';
+import { closeConnection } from '../config/mongoConnection.js';
 chai.use(chaiAsPromised);
 //Tests for createGroup method
 
@@ -21,4 +22,5 @@ chai.assert.deepEqual(group_1, {
     groupDescription: "This is group 1"
 
 })
+closeConnection();
 console.log("Tests passed!");
