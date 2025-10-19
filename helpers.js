@@ -13,4 +13,9 @@ const checkString = (str, varName, funcName) => {
     if (str.length === 0) {
         throw `${varName} cannot be empty.`;
     }
-}
+    return str;
+};
+
+export {
+    checkString
+};
