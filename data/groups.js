@@ -1,4 +1,6 @@
-import { checkString,  checkId} from "../helpers";
+import {groups} from '../config/mongoCollections.js';
+import { checkString, checkId} from "../helpers.js";
+import {ObjectId} from 'mongodb';
 const exportedMethods = {
 
     async getGroupByID(id){
@@ -25,7 +27,7 @@ const exportedMethods = {
         const groupCollection = await groups();
         const newInsertInformation = await groupCollection.insertOne(newGroup);
         if (!newInsertInformation.insertedId) throw 'Error: Insert failed!';
-        return this.getGroupById(newInsertInformation.insertedId.toString());
+        return this.getGroupByID(newInsertInformation.insertedId.toString());
     },
     
 };
