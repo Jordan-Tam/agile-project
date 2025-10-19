@@ -1,3 +1,5 @@
+[![Node.js CI](https://github.com/Jordan-Tam/agile-project/actions/workflows/node.js.yml/badge.svg)](https://github.com/Jordan-Tam/agile-project/actions/workflows/node.js.yml)
+
 # Expense Splitter
 
 Our expense splitter app allows groups of people to track their expenses, including details such
