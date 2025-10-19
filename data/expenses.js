@@ -5,6 +5,14 @@ import {checkString} from "../helpers.js";
 const exportedMethods = {
 
     async createExpense(name, cost, deadline, payee, payers) {
+
+        // Input validation.
+        name = checkString(name, "Name", "createExpense");
+        cost = checkCost(cost, "createExpense");
+        deadline = checkDate(deadline, "Deadline", "createExpense");
+        payee = checkId(payee, "Payee", "createExpense");
+        for (let payer of payers) { checkId(payer, "Payer", "createExpense"); }
+
         let newExpense = {
             name,
             cost,
