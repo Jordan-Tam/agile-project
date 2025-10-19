@@ -7,17 +7,17 @@ const exportedMethods = {
         id = checkId(id);
         const groupCollection = await groups();
         const group = await groupCollection.findOne({_id: new ObjectId(id)});
-        if (!group) throw 'Error: Post not found';
+        if (!group) throw 'Error: Group not found';
         return group;
     },
 
     async createGroup(groupName, groupDescription) {
-        groupName = checkString(groupName);
+        groupName = checkString(groupName, "groupName");
         if(groupName.length < 5 || groupName.length > 50){
             throw 'Invalid group name length';
         }
-        groupDescription = checkString(groupDescription);
-        if(groupDescription.length > 20000){
+        groupDescription = checkString(groupDescription, "groupDescription");
+        if(groupDescription.length > 1000){
             throw 'Invalid group description length';
         };
         let newGroup = {

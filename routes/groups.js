@@ -1,6 +1,6 @@
 import express from "express";
 import {groups} from '../config/mongoCollections.js';
-import  groupsData  from "../data/groups.js"; // assuming you export your data functions here
+import  groupsData  from "../data/groups.js";
 const router = express.Router();
 
 // GET route - display the "create group" form
