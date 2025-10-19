@@ -13,5 +13,6 @@ const getCollectionFn = (collection) => {
 	};
 };
 
-//export const posts = getCollectionFn('posts');
 export const users = getCollectionFn("users");
+export const groups = getCollectionFn("groups");
+export const expenses = getCollectionFn("expenses");
