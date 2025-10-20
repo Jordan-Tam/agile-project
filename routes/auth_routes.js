@@ -397,23 +397,4 @@ router.route("/superuser").get(async (req, res) => {
   }
 });
 
-router.route("/signout").get(async (req, res) => {
-  //code here for GET
-  //route will expire/delete the AuthenticationState and and inform the user that they have been logged out
-  //https://stackoverflow.com/questions/5573256/how-to-end-a-session-in-expressjs
-  try {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).send("Error while logging out.");
-      }
-      res.clearCookie("AuthenticationState");
-      res.render("signout", {
-        message: "You have been logged out successfully.",
-      });
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 export default router;
