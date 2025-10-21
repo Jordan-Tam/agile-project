@@ -28,6 +28,7 @@ const validateUserId = (userId) => {
 		throw "userId can only contain letters and numbers.";
 	}
 	if (userId.length < 5 || userId.length > 10) {
+		console.log(userId);
 		throw "userId must be 5-10 characters.";
 	}
 	return userId;
@@ -122,4 +123,9 @@ const getUserByUserId = async (userId) => {
 	};
 };
 
-export { authenticateUser, getUserByUserId };
+const getAllUsers = async () => {
+	const users = await usersCollection();
+	return (await users.find({}).toArray());
+}
+
+export { authenticateUser, getUserByUserId, getAllUsers };
