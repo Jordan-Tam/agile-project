@@ -45,15 +45,16 @@ const checkDate = (date, varName, funcName) => {
     if (!(date instanceof Date)) {
         throw `${varName} must be a date.`
     }
+    return date;
 }
 
 const checkCost = (cost, funcName) => {
 
     // Basic number validation.
-    cost = checkNumber(cost);
+    cost = checkNumber(cost, "Cost", funcName);
 
     // Cost can have up to 2 decimal places.
-    if (/\d*\.?\d?\d?/.test(String(cost))) {
+    if (!(/^\d+(\.\d{1,2})?$/.test(String(cost)))) {
         throw "Cost should be a number with up to 2 decimal places.";
     }
 

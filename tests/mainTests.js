@@ -3,6 +3,7 @@ import { spawn } from "child_process";
 import { closeConnection } from "../config/mongoConnection.js";
 import { runAuthTests } from "./authTests.js";
 import { runGroupTests } from "./groupsTests.js";
+import { runExpenseTests } from "./expensesTests.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -148,11 +149,15 @@ async function run() {
 		console.log("\n=== Running Groups Tests ===");
 		await runGroupTests();
 
+		console.log("\n=== Running Expenses Tests ===");
+		await runExpenseTests();
+
 		console.log("\n=== Combined Test Summary ===");
 		console.log(
 			`Auth tests -> total: ${authSummary.total}, failed: ${authSummary.failed}`
 		);
 		console.log("Groups tests -> see above logs");
+		console.log("Expenses tests -> see above logs");
 	} catch (err) {
 		console.error("Error running tests:", err);
 	} finally {

@@ -13,7 +13,7 @@ function validateUserId(value) {
 	if (!s) throw "userId cannot be empty.";
 	if (!/^[a-zA-Z0-9]+$/.test(s))
 		throw "userId can only contain letters and numbers.";
-	if (s.length < 5 || s.length > 10) throw "userId must be 5–10 characters.";
+	if (s.length < 5 || s.length > 10) throw "userId must be 5-10 characters.";
 	return s.toLowerCase();
 }
 
