@@ -1,263 +1,184 @@
 import axios from "axios";
 import * as chai from 'chai';
-import  groupsData  from "../data/groups.js";
+import groupsData from "../data/groups.js";
 import chaiAsPromised from 'chai-as-promised';
-import { closeConnection } from '../config/mongoConnection.js';
+import { spawn } from "child_process";
+import { closeConnection } from "../config/mongoConnection.js";
+import { runAuthTests } from "./authTests.js";
+import { runGroupTests } from "./groupsTests.js";
+import { runExpenseTests } from "./expensesTests.js";
 import { runSignoutTests } from "./signoutTest.js";
 
+const BASE = "http://localhost:3000";
+let serverProcess = null;
 
-const BASE = "http://localhost:3000"; 
-
+// helpers
 function form(data) {
-  const p = new URLSearchParams();
-  for (const [k, v] of Object.entries(data)) p.append(k, v);
-  return p;
+	const p = new URLSearchParams();
+	for (const [k, v] of Object.entries(data)) p.append(k, v);
+	return p;
 }
 
 async function postRegister(payload) {
-  try {
-    const res = await axios.post(`${BASE}/register`, form(payload), {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      maxRedirects: 0,
-      validateStatus: () => true
-    });
-    return res;
-  } catch (err) {
-    return { status: 0, error: err.message };
-  }
+	try {
+		const res = await axios.post(`${BASE}/register`, form(payload), {
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			maxRedirects: 0,
+			validateStatus: () => true
+		});
+		return res;
+	} catch (err) {
+		return { status: 0, error: err.message };
+	}
 }
 
-function expect(cond, msg) {
-  if (!cond) throw new Error(msg);
+// Create persistent test users for manual testing
+async function createTestUsers() {
+	console.log("\nCreating persistent test users for manual testing...");
+
+	const testUsers = [
+		{
+			firstName: "John",
+			lastName: "Doe",
+			userId: "johndoe",
+			password: "Password!1",
+			confirmPassword: "Password!1",
+			role: "user"
+		},
+		{
+			firstName: "Jane",
+			lastName: "Smith",
+			userId: "janesmith",
+			password: "Password!2",
+			confirmPassword: "Password!2",
+			role: "user"
+		},
+		{
+			firstName: "Admin",
+			lastName: "User",
+			userId: "adminuser",
+			password: "Admin123!",
+			confirmPassword: "Admin123!",
+			role: "superuser"
+		},
+		{
+			firstName: "Test",
+			lastName: "Account",
+			userId: "testuser",
+			password: "Test123!",
+			confirmPassword: "Test123!",
+			role: "user"
+		}
+	];
+
+	for (const user of testUsers) {
+		const res = await postRegister(user);
+		if (res.status === 201 || res.status === 302) {
+			console.log(
+				`✓ Created user: ${user.userId} (password: ${user.password})`
+			);
+		} else if (
+			res.status === 400 &&
+			typeof res.data === "string" &&
+			res.data.includes("already taken")
+		) {
+			console.log(`- User already exists: ${user.userId}`);
+		} else {
+			console.log(
+				`✗ Failed to create user: ${user.userId} (status ${res.status})`
+			);
+		}
+	}
+
+	console.log("\nTest users ready for manual testing!");
+	console.log("You can log in with:");
+	console.log("  - johndoe / Password!1");
+	console.log("  - janesmith / Password!2");
+	console.log("  - adminuser / Admin123! (superuser)");
+	console.log("  - testuser / Test123!\n");
 }
 
-// signup tests
+// Server management
+async function startServer() {
+	return new Promise((resolve, reject) => {
+		console.log("Starting server...");
+		serverProcess = spawn("node", ["app.js"], {
+			cwd: process.cwd(),
+			stdio: "pipe",
+			shell: true
+		});
 
-async function test_signup_success_then_duplicate() {
-  const userId = `u${Date.now().toString().slice(-8)}`;
-
-  const res1 = await postRegister({
-    firstName: "Bryan",
-    lastName: "John",
-    userId,
-    password: "Password!1",
-    confirmPassword: "Password!1",
-    role: "user"
-  });
-  expect(res1.status === 201 || res1.status === 302, `Expected 201/302, got ${res1.status}`);
-
-  const res2 = await postRegister({
-    firstName: "Bryan",
-    lastName: "John",
-    userId,
-    password: "Password!1",
-    confirmPassword: "Password!1",
-    role: "user"
-  });
-  expect(res2.status === 400, `Expected 400 duplicate, got ${res2.status}`);
-  expect(
-    typeof res2.data === "string" && res2.data.toLowerCase().includes("already taken"),
-    "Expected duplicate error message"
-  );
+		let output = "";
+		serverProcess.stdout.on("data", (data) => {
+			output += data.toString();
+			if (output.includes("We've now got a server!")) {
+				console.log("Server started successfully!");
+				resolve();
+			}
+		});
+		serverProcess.stderr.on("data", (data) => {
+			console.error("Server error:", data.toString());
+		});
+		serverProcess.on("error", (err) => {
+			console.error("Failed to start server:", err);
+			reject(err);
+		});
+		setTimeout(() => {
+			if (output.includes("We've now got a server!")) resolve();
+			else {
+				console.log("Server might be running (timeout reached)");
+				resolve();
+			}
+		}, 5000);
+	});
 }
 
-async function test_signup_short_userid_400() {
-  const res = await postRegister({
-    firstName: "Al",
-    lastName: "Bee",
-    userId: "x",
-    password: "Password!1",
-    confirmPassword: "Password!1",
-    role: "user"
-  });
-  expect(res.status === 400, `Expected 400 for short userId, got ${res.status}`);
+function stopServer() {
+	if (serverProcess) {
+		console.log("\nStopping server...");
+		serverProcess.kill();
+		serverProcess = null;
+	}
 }
 
-async function test_signup_weak_password_400() {
-  const res = await postRegister({
-    firstName: "Al",
-    lastName: "Bee",
-    userId: `weak${Date.now().toString().slice(-5)}`,
-    password: "password",
-    confirmPassword: "password",
-    role: "user"
-  });
-  expect(res.status === 400, `Expected 400 for weak password, got ${res.status}`);
-}
-
-async function test_signup_mismatch_password_400() {
-  const res = await postRegister({
-    firstName: "Al",
-    lastName: "Bee",
-    userId: `mis${Date.now().toString().slice(-5)}`,
-    password: "Password!1",
-    confirmPassword: "Password!2",
-    role: "user"
-  });
-  expect(res.status === 400, `Expected 400 for mismatched password, got ${res.status}`);
-}
-
-
-// missing firstName
-async function test_signup_missing_firstName_400() {
-  const res = await postRegister({
-    firstName: "",
-    lastName: "Smith",
-    userId: `missfn${Date.now().toString().slice(-5)}`,
-    password: "Password!1",
-    confirmPassword: "Password!1",
-    role: "user"
-  });
-  expect(res.status === 400, `Expected 400 for missing firstName, got ${res.status}`);
-}
-
-// missing lastName
-async function test_signup_missing_lastName_400() {
-  const res = await postRegister({
-    firstName: "Alice",
-    lastName: "",
-    userId: `missln${Date.now().toString().slice(-5)}`,
-    password: "Password!1",
-    confirmPassword: "Password!1",
-    role: "user"
-  });
-  expect(res.status === 400, `Expected 400 for missing lastName, got ${res.status}`);
-}
-
-// invalid firstName (has digits)
-async function test_signup_invalid_firstName_digits_400() {
-  const res = await postRegister({
-    firstName: "Al1ce",
-    lastName: "Brown",
-    userId: `badfn${Date.now().toString().slice(-5)}`,
-    password: "Password!1",
-    confirmPassword: "Password!1",
-    role: "user"
-  });
-  expect(res.status === 400, `Expected 400 for invalid firstName, got ${res.status}`);
-}
-
-// invalid lastName (has symbols)
-async function test_signup_invalid_lastName_symbols_400() {
-  const res = await postRegister({
-    firstName: "Bob",
-    lastName: "Br@wn",
-    userId: `badln${Date.now().toString().slice(-5)}`,
-    password: "Password!1",
-    confirmPassword: "Password!1",
-    role: "user"
-  });
-  expect(res.status === 400, `Expected 400 for invalid lastName, got ${res.status}`);
-}
-
-// non-alphanumeric userId
-async function test_signup_non_alnum_userid_400() {
-  const res = await postRegister({
-    firstName: "Cara",
-    lastName: "Lane",
-    userId: "car@123",
-    password: "Password!1",
-    confirmPassword: "Password!1",
-    role: "user"
-  });
-  expect(res.status === 400, `Expected 400 for non-alphanumeric userId, got ${res.status}`);
-}
-
-// firstName too long (>20)
-async function test_signup_firstName_too_long_400() {
-  const longName = "A".repeat(21);
-  const res = await postRegister({
-    firstName: longName,
-    lastName: "Short",
-    userId: `toolfn${Date.now().toString().slice(-5)}`,
-    password: "Password!1",
-    confirmPassword: "Password!1",
-    role: "user"
-  });
-  expect(res.status === 400, `Expected 400 for too long firstName, got ${res.status}`);
-}
-
-// lastName too long (>20)
-async function test_signup_lastName_too_long_400() {
-  const longName = "B".repeat(21);
-  const res = await postRegister({
-    firstName: "Short",
-    lastName: longName,
-    userId: `toolln${Date.now().toString().slice(-5)}`,
-    password: "Password!1",
-    confirmPassword: "Password!1",
-    role: "user"
-  });
-  expect(res.status === 400, `Expected 400 for too long lastName, got ${res.status}`);
-}
-
-// userId too long (>10)
-async function test_signup_userid_too_long_400() {
-  const res = await postRegister({
-    firstName: "Dana",
-    lastName: "West",
-    userId: "danawest0011", // 11 chars
-    password: "Password!1",
-    confirmPassword: "Password!1",
-    role: "user"
-  });
-  expect(res.status === 400, `Expected 400 for too long userId, got ${res.status}`);
-}
-
-
+// Orchestrator
 async function run() {
-  const tests = [
-    test_signup_success_then_duplicate,
-    test_signup_short_userid_400,
-    test_signup_weak_password_400,
-    test_signup_mismatch_password_400,
-    test_signup_missing_firstName_400,
-    test_signup_missing_lastName_400,
-    test_signup_invalid_firstName_digits_400,
-    test_signup_invalid_lastName_symbols_400,
-    test_signup_non_alnum_userid_400,
-    test_signup_firstName_too_long_400,
-    test_signup_lastName_too_long_400,
-    test_signup_userid_too_long_400
-  ];
+	try {
+		await startServer();
+		await createTestUsers();
 
-  let fails = 0;
-  for (const t of tests) {
-    try {
-      await t();
-      console.log(`PASS: ${t.name}`);
-    } catch (err) {
-      fails++;
-      console.error(`FAIL: ${t.name} -> ${err.message}`);
-    }
-  }
+		console.log("\n=== Running Auth Tests ===");
+		const authSummary = await runAuthTests();
 
+		console.log("\n=== Running Groups Tests ===");
+		await runGroupTests();
 
-chai.use(chaiAsPromised);
-//Tests for createGroup method
+		console.log("\n=== Running Expenses Tests ===");
+		await runExpenseTests();
 
-await chai.expect(groupsData.createGroup()).to.be.rejectedWith('groupName is required.');
-await chai.expect(groupsData.createGroup("group 1")).to.be.rejectedWith('groupDescription is required.');
-await chai.expect(groupsData.createGroup(52, "group description")).to.be.rejectedWith('groupName must be a string.');
-await chai.expect(groupsData.createGroup("group 1", 52)).to.be.rejectedWith('groupDescription must be a string.');
-await chai.expect(groupsData.createGroup("    ", "group description")).to.be.rejectedWith('groupName cannot be empty.');
-await chai.expect(groupsData.createGroup("group 1", "    ")).to.be.rejectedWith('groupDescription cannot be empty.');
-await chai.expect(groupsData.createGroup("g", "This is group 1")).to.be.rejectedWith('Invalid group name length');
-await chai.expect(groupsData.createGroup("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "This is group 1")).to.be.rejectedWith('Invalid group name length');
-await chai.expect(groupsData.createGroup("group 1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")).to.be.rejectedWith('Invalid group description length');
-console.log("Jared's new tests");
-const group_1 = await groupsData.createGroup("group 1", "This is group 1");
-chai.assert.deepEqual(group_1, {
-    _id: group_1._id,
-    groupName: "group 1",
-    groupDescription: "This is group 1"
+		console.log("\n=== Running Signout Tests ===");
+		await runSignoutTests();
 
-})
+		// Run the inline group data tests
+		await runInlineGroupTests();
 
-await runSignoutTests();
-
-closeConnection();
-
-  }
+		console.log("\n=== Combined Test Summary ===");
+		console.log(
+			`Auth tests -> total: ${authSummary.total}, failed: ${authSummary.failed}`
+		);
+		console.log("Groups tests -> see above logs");
+		console.log("Expenses tests -> see above logs");
+		console.log("Signout tests -> see above logs");
+		console.log("Inline group data tests -> see above logs");
+	} catch (err) {
+		console.error("Error running tests:", err);
+	} finally {
+		stopServer();
+		try {
+			await closeConnection();
+		} catch {}
+		process.exit(0);
+	}
+}
 
 run();

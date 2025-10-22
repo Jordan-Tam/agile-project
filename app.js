@@ -24,7 +24,11 @@ app.set("view engine", "handlebars");
 app.use("/groups", groupRoutes);
 // Default route
 app.get("/", (req, res) => {
-  res.redirect("/groups/new");
+	if (req.session.user) {
+		res.redirect("/groups/new");
+	} else {
+		res.redirect("/login");
+	}
 });
 configRoutes(app);
 

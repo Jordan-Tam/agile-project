@@ -17,6 +17,7 @@ const checkString = (str, varName, funcName) => {
     }
     return str;
 }
+
 const checkId = (id) => {
     if (!id) throw 'Error: You must provide an id to search for';
     if (typeof id !== 'string') throw 'Error: id must be a string';
@@ -27,6 +28,44 @@ const checkId = (id) => {
     return id;
   }
 
+const checkNumber = (num, varName, funcName) => {
+    if (num === undefined || num === null) {
+        throw `${varName} is required.`;
+    }
+    if (typeof num !== "number") {
+        throw `${varName} must be a number.`;
+    }
+    return num;
+};
+
+const checkDate = (date, varName, funcName) => {
+    if (date === undefined || date === null) {
+        throw `${varName} is required.`;
+    }
+    if (!(date instanceof Date)) {
+        throw `${varName} must be a date.`
+    }
+    return date;
+}
+
+const checkCost = (cost, funcName) => {
+
+    // Basic number validation.
+    cost = checkNumber(cost, "Cost", funcName);
+
+    // Cost can have up to 2 decimal places.
+    if (!(/^\d+(\.\d{1,2})?$/.test(String(cost)))) {
+        throw "Cost should be a number with up to 2 decimal places.";
+    }
+
+    return cost;
+
+};
+
 export {
-    checkString, checkId
+    checkString,
+    checkId,
+    checkNumber,
+    checkDate,
+    checkCost
 };
