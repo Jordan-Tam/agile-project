@@ -4,14 +4,15 @@ import signoutRoutes from "./signout.js";
 import { static as staticDir } from "express";
 
 const constructorMethod = (app) => {
-	// app.use("/", auth_routes);
-	app.use("/", registerRoutes);
-	app.use("/", signoutRoutes);
-	app.use("/public", staticDir("public"));
-	// per announcement
-	app.use(/(.*)/, (req, res) => {
-		res.status(404).json({ error: "Not found" });
-	});
+  // app.use("/", auth_routes);
+  app.use("/", registerRoutes);
+  app.use("/", signoutRoutes);
+  app.use("/", signoutRoutes);
+  app.use("/public", staticDir("public"));
+  // per announcement
+  app.use(/(.*)/, (req, res) => {
+    res.status(404).json({ error: "Not found" });
+  });
 };
 
 export default constructorMethod;

@@ -3,6 +3,7 @@ import * as chai from 'chai';
 import  groupsData  from "../data/groups.js";
 import chaiAsPromised from 'chai-as-promised';
 import { closeConnection } from '../config/mongoConnection.js';
+import { runSignoutTests } from "./signoutTest.js";
 
 
 const BASE = "http://localhost:3000"; 
@@ -252,6 +253,9 @@ chai.assert.deepEqual(group_1, {
     groupDescription: "This is group 1"
 
 })
+
+await runSignoutTests();
+
 closeConnection();
 
   }
