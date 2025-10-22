@@ -1,9 +1,13 @@
 import axios from "axios";
+import * as chai from 'chai';
+import groupsData from "../data/groups.js";
+import chaiAsPromised from 'chai-as-promised';
 import { spawn } from "child_process";
 import { closeConnection } from "../config/mongoConnection.js";
 import { runAuthTests } from "./authTests.js";
 import { runGroupTests } from "./groupsTests.js";
 import { runExpenseTests } from "./expensesTests.js";
+import { runSignoutTests } from "./signoutTest.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -152,12 +156,20 @@ async function run() {
 		console.log("\n=== Running Expenses Tests ===");
 		await runExpenseTests();
 
+		console.log("\n=== Running Signout Tests ===");
+		await runSignoutTests();
+
+		// Run the inline group data tests
+		await runInlineGroupTests();
+
 		console.log("\n=== Combined Test Summary ===");
 		console.log(
 			`Auth tests -> total: ${authSummary.total}, failed: ${authSummary.failed}`
 		);
 		console.log("Groups tests -> see above logs");
 		console.log("Expenses tests -> see above logs");
+		console.log("Signout tests -> see above logs");
+		console.log("Inline group data tests -> see above logs");
 	} catch (err) {
 		console.error("Error running tests:", err);
 	} finally {
