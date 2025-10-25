@@ -2,10 +2,14 @@
 import registerRoutes from "./register.js";
 import signoutRoutes from "./signout.js";
 import loginRoutes from "./login.js";
+import { requireAuth } from "../middleware.js";
 import { static as staticDir } from "express";
 
 const constructorMethod = (app) => {
   // app.use("/", auth_routes);
+  app.use("/home", requireAuth, (req, res) => {
+    res.render("home");
+  })
   app.use("/", registerRoutes);
   app.use("/", loginRoutes);
   app.use("/", signoutRoutes);
