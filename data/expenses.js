@@ -82,11 +82,30 @@ const exportedMethods = {
 
     },
 
+    async getAllExpenses(groupId) {
+
+        // Input validation.
+        groupId = checkId(groupId, "Group", "getAllExpenses");
+
+        // Get group associated with groupId.
+        const groupsCollection = await groups();
+        const group = await groupsCollection.findOne({
+            _id: new ObjectId(groupId)
+        });
+
+        if (!group) {
+            throw "Group not found.";
+        }
+
+        return group.expenses;
+
+    },
+
     async deleteExpense(groupId, expenseId) {
 
         // Input validation.
-        groupId = checkId(groupId);
-        expenseId = checkId(expenseId);
+        groupId = checkId(groupId, "Group", "deleteExpense");
+        expenseId = checkId(expenseId, "Expense", "deleteExpense");
 
         // Connect to the groups database.
         const groupsCollection = await groups();
@@ -97,7 +116,7 @@ const exportedMethods = {
         // Remove the expense from the group.
         const deleteInfo = await groupsCollection.findOneAndUpdate(
             {_id: group._id},
-            {$pull: {expenses: {"_id": new ObjectId(id)}}},
+            {$pull: {expenses: {"_id": new ObjectId(expenseId)}}},
             {returnDocument: "after"}
         );
 

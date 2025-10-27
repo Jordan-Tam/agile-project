@@ -370,7 +370,7 @@ export async function runAuthTests() {
 			console.log(`PASS: ${t.name}`);
 		} catch (err) {
 			fails++;
-			console.error(`FAIL: ${t.name} -> ${err.errors}`);
+			console.error(`FAIL: ${t.name} -> ${err}`);
 		}
 	}
 	return { total: tests.length, failed: fails };

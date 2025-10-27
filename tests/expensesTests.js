@@ -15,6 +15,7 @@ export async function runExpenseTests() {
 
     const group_1 = await groupsData.createGroup("Test Group", "This expense group is for testing.");
 
+    // TESTS FOR CREATING AN EXPENSE
     try {
         await expensesData.createExpense(
             group_1._id.toString()
@@ -63,7 +64,7 @@ export async function runExpenseTests() {
             "1234567890"
         );
     } catch (e) {
-        assert(e === "Error: invalid object ID");
+        assert(e === "Payee ID is not a valid ID.");
     }
 
     const expense_1 = await expensesData.createExpense(
@@ -82,16 +83,37 @@ export async function runExpenseTests() {
         cost: 99.99,
         deadline: new Date("10/22/2025"),
         payee: usersList[0]._id.toString(),
-        payers: [usersList[1]._id.toString(), usersList[2]._id.toString()]
+        payers: [
+            usersList[1]._id.toString(),
+            usersList[2]._id.toString()
+        ]
     });
 
+    assert((await expensesData.getAllExpenses(group_1._id.toString())).length === 1);
+
+    // TESTS FOR DELETING AN EXPENSE
     try {
-        await expensesData.createExpense(
-            group_1._id.toString()
+        await expensesData.deleteExpense(
+            
         );
     } catch (e) {
-        assert(e === "Name is required.");
+        assert(e === "Group ID is required.");
     }
+
+    try {
+        await expensesData.deleteExpense(
+            group_1._id.toString()
+        )
+    } catch (e) {
+        assert(e === "Expense ID is required.");
+    }
+
+    await expensesData.deleteExpense(
+        group_1._id.toString(),
+        expense_1.expenses[0]._id.toString()
+    );
+
+    assert((await expensesData.getAllExpenses(group_1._id.toString())).length === 0);
 
     console.log("All expense tests passed.");
 

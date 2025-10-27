@@ -13,7 +13,7 @@ import {
 const router = Router();
 
 /* validation helpers */
-/* function validateUserId(value) {
+function validateUserId(value) {
 	if (typeof value !== "string") throw "userId must be a string.";
 	const s = value.trim();
 	if (!s) throw "userId cannot be empty.";
@@ -27,7 +27,7 @@ function validatePasswordInput(pass) {
 	if (typeof pass !== "string") throw "Password must be a string.";
 	if (!pass || pass.trim().length === 0) throw "Password cannot be empty.";
 	return pass;
-} */
+}
 
 /* routes */
 router.get("/", redirectIfLoggedIn, (req, res) => {
@@ -37,14 +37,13 @@ router.get("/", redirectIfLoggedIn, (req, res) => {
 router.post("/", async (req, res) => {
 	try {
 
-		/* OLD
-		const userId = validateUserId(xss(req.body.userId));
-		const password = validatePasswordInput(xss(req.body.password));
-		*/
-
+		// OLD
+		/* const userId = validateUserId(xss(req.body.userId));
+		const password = validatePasswordInput(xss(req.body.password)); */
+		
 		// NEW
-		const userId = checkUserId(xss(req.body.userId));
-		const password = checkPassword(xss(req.body.password));
+		const userId = checkUserId(xss(req.body.userId), "User", "POST /register");
+		const password = checkPassword(xss(req.body.password), "POST /register");
 
 		const users = await usersCollectionFn();
 		const user = await users.findOne({ userId });

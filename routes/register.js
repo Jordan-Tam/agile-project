@@ -15,7 +15,7 @@ const router = Router();
 const SALT_ROUNDS = 10;
 
 /* validation helpers */
-/* function validateName(value, label) {
+function validateName(value, label) {
 	if (typeof value !== "string") throw `${label} must be a string.`;
 	const s = value.trim();
 	if (!s) throw `${label} cannot be empty.`;
@@ -44,7 +44,7 @@ function validatePassword(pass, confirm) {
 function validateRole(value) {
 	const r = (value || "").toString().trim().toLowerCase();
 	return ["user", "superuser"].includes(r) ? r : "user"; // default to user
-} */
+}
 
 /* routes */
 router.get("/", redirectIfLoggedIn, (req, res) => {
@@ -54,17 +54,16 @@ router.get("/", redirectIfLoggedIn, (req, res) => {
 router.post("/", async (req, res) => {
 	try {
 
-		/* OLD
-		const firstName = validateName(xss(req.body.firstName), "First name");
+		// OLD
+		/* const firstName = validateName(xss(req.body.firstName), "First name");
 		const lastName = validateName(xss(req.body.lastName), "Last name");
 		const userId = validateUserId(xss(req.body.userId));
 		const password = validatePassword(
 			xss(req.body.password),
 			xss(req.body.confirmPassword)
 		);
-		const role = validateRole(xss(req.body.role));
-		*/
-
+		const role = validateRole(xss(req.body.role)); */
+		
 		// NEW
 		const firstName = checkName(xss(req.body.firstName), "First name", "POST /register");
 		const lastName = checkName(xss(req.body.lastName), "Last name", "POST /register");
@@ -75,8 +74,8 @@ router.post("/", async (req, res) => {
 			throw "Passwords do not match.";
 		}
 
-		/* OLD
-		const users = await usersCollectionFn();
+		// OLD
+		/* const users = await usersCollectionFn();
 		await users.createIndex({ userId: 1 }, { unique: true });
 
 		const exists = await users.findOne({ userId });

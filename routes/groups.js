@@ -68,21 +68,25 @@ router.route("/:id/expense/new")
 	})
 	.post(requireAuth, async (req, res) => {
 		try {
-			let group = req.params.id;
+			let groupId = req.params.id;
 			let { name, cost, deadline, payee, payers } = req.body;
-			return (await expensesData.createExpense(
-				group, name, cost, deadline, payee, payers
-			))
+			return res.json(await expensesData.createExpense(
+				groupId, name, cost, deadline, payee, payers
+			));
 		} catch (e) {
-			return res.status(500);
+			return res.status(500).json({error: e});
 		}
-	})
-	.delete(requireAuth, async (req, res) => {
-		try {
+	});
 
-		} catch (e) {
-			
-		}
-	})
+router.route("/:groupId/:expenseId").delete(requireAuth, async (req, res) => {
+	try {
+		let { groupId, expenseId } = req.body;
+		return res.json(await expensesData.deleteExpense(
+			groupId, expenseId
+		));
+	} catch (e) {
+		return res.status(500).json({error: e});
+	}
+});
 
 export default router;
