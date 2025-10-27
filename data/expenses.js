@@ -1,6 +1,6 @@
 import {ObjectId} from "mongodb";
 import {groups} from "../config/mongoCollections.js";
-import {getUserByUserId} from './users.js';
+import usersData from './users.js';
 import groupsData from './groups.js';
 import {
     checkString,
@@ -25,10 +25,10 @@ const exportedMethods = {
         await groupsData.getGroupByID(group);
 
         // Check if payee ID exists.
-        //await getUserByUserId(payee.toString());
+        //await usersDatagetUserByUserId(payee.toString());
 
         // Check if payer ID exists.
-        //for (let payer of payers) { await  getUserByUserId(payer.toString()); }
+        //for (let payer of payers) { await usersDatagetUserByUserId(payer.toString()); }
 
         // Create the new expense object.
         let newExpense = {
@@ -80,6 +80,35 @@ const exportedMethods = {
 
         throw "This message should not appear.";
 
+    },
+
+    async deleteExpense(groupId, expenseId) {
+
+        // Input validation.
+        groupId = checkId(groupId);
+        expenseId = checkId(expenseId);
+
+        // Connect to the groups database.
+        const groupsCollection = await groups();
+
+        // Get the group associated with the given ID.
+        let group = await groupsData.getGroupByID(groupId);
+
+        // Remove the expense from the group.
+        const deleteInfo = await groupsCollection.findOneAndUpdate(
+            {_id: group._id},
+            {$pull: {expenses: {"_id": new ObjectId(id)}}},
+            {returnDocument: "after"}
+        );
+
+        // Make sure the deletion was successful.
+        if (!deleteInfo) {
+            throw "Could not delete expense.";
+        }
+
+        // Return the returned document.
+        return deleteInfo;
+        
     }
 
 }

@@ -1,12 +1,17 @@
+// Import testing framework.
 import {assert} from "chai";
+
+// Import database connections.
 import {users} from "../config/mongoCollections.js";
+
+// Import data functions.
+import usersData from "../data/users.js";
 import groupsData from "../data/groups.js";
 import expensesData from "../data/expenses.js";
-import {getAllUsers} from "../data/users.js";
 
 export async function runExpenseTests() {
 
-    const usersList = await getAllUsers();
+    const usersList = await usersData.getAllUsers();
 
     const group_1 = await groupsData.createGroup("Test Group", "This expense group is for testing.");
 
@@ -79,6 +84,14 @@ export async function runExpenseTests() {
         payee: usersList[0]._id.toString(),
         payers: [usersList[1]._id.toString(), usersList[2]._id.toString()]
     });
+
+    try {
+        await expensesData.createExpense(
+            group_1._id.toString()
+        );
+    } catch (e) {
+        assert(e === "Name is required.");
+    }
 
     console.log("All expense tests passed.");
 

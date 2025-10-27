@@ -3,11 +3,17 @@ import xss from "xss";
 import { users as usersCollectionFn } from "../config/mongoCollections.js";
 import bcrypt from "bcryptjs";
 import { redirectIfLoggedIn } from "../middleware.js";
+import usersData from "../data/users.js";
+import {
+	checkName,
+	checkUserId,
+	checkPassword
+} from "../helpers.js";
 
 const router = Router();
 
 /* validation helpers */
-function validateUserId(value) {
+/* function validateUserId(value) {
 	if (typeof value !== "string") throw "userId must be a string.";
 	const s = value.trim();
 	if (!s) throw "userId cannot be empty.";
@@ -21,17 +27,24 @@ function validatePasswordInput(pass) {
 	if (typeof pass !== "string") throw "Password must be a string.";
 	if (!pass || pass.trim().length === 0) throw "Password cannot be empty.";
 	return pass;
-}
+} */
 
 /* routes */
-router.get("/login", redirectIfLoggedIn, (req, res) => {
+router.get("/", redirectIfLoggedIn, (req, res) => {
 	res.status(200).render("login", { title: "Login" });
 });
 
-router.post("/login", async (req, res) => {
+router.post("/", async (req, res) => {
 	try {
+
+		/* OLD
 		const userId = validateUserId(xss(req.body.userId));
 		const password = validatePasswordInput(xss(req.body.password));
+		*/
+
+		// NEW
+		const userId = checkUserId(xss(req.body.userId));
+		const password = checkPassword(xss(req.body.password));
 
 		const users = await usersCollectionFn();
 		const user = await users.findOne({ userId });

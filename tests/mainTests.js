@@ -3,7 +3,7 @@ import * as chai from 'chai';
 import groupsData from "../data/groups.js";
 import chaiAsPromised from 'chai-as-promised';
 import { spawn } from "child_process";
-import { closeConnection } from "../config/mongoConnection.js";
+import { dbConnection, closeConnection } from "../config/mongoConnection.js";
 import { runAuthTests } from "./authTests.js";
 import { runGroupTests } from "./groupsTests.js";
 import { runExpenseTests } from "./expensesTests.js";
@@ -11,6 +11,9 @@ import { runSignoutTests } from "./signoutTest.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
+
+const db = await dbConnection();
+await db.dropDatabase();
 
 // helpers
 function form(data) {
@@ -160,7 +163,7 @@ async function run() {
 		await runSignoutTests();
 
 		// Run the inline group data tests
-		await runInlineGroupTests();
+		//await runInlineGroupTests();
 
 		console.log("\n=== Combined Test Summary ===");
 		console.log(

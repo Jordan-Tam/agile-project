@@ -60,6 +60,8 @@ router.route("/:id")
 		}
 	});
 
+
+// Expense routes
 router.route("/:id/expense/new")
 	.get(requireAuth, async (req, res) => {
 		return res.render("groups/createExpense");
@@ -73,6 +75,13 @@ router.route("/:id/expense/new")
 			))
 		} catch (e) {
 			return res.status(500);
+		}
+	})
+	.delete(requireAuth, async (req, res) => {
+		try {
+
+		} catch (e) {
+			
 		}
 	})
 

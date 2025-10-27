@@ -5,16 +5,24 @@ const LOWERCASE_LETTERS = "abcdefghijklmnopqrstuvwxyz";
 const NUMBERS = "0123456789";
 
 const checkString = (str, varName, funcName) => {
+
+    // Check if "str" is undefined or null.
     if (str === undefined || str === null) {
         throw `${varName} is required.`;
     }
+
+    // Check if "str" is of type string.
     if (typeof str !== "string") {
         throw `${varName} must be a string.`;
     }
+
     str = str.trim();
+    
+    // Check if the string is composed of only spaces.
     if (str.length === 0) {
         throw `${varName} cannot be empty.`;
     }
+    
     return str;
 }
 
@@ -48,6 +56,65 @@ const checkDate = (date, varName, funcName) => {
     return date;
 }
 
+const checkName = (name, varName, funcName) => {
+
+    name = checkString(name, varName, funcName);
+
+	if (!/^[a-zA-Z]+$/.test(name)) {
+		throw `${fieldName} must contain only letters.`;
+	}
+
+	if (name.length < 2 || name.length > 20) {
+		throw `${fieldName} must be 2-20 characters.`;
+	}
+
+	return name;
+
+}
+
+const checkUserId = (userId, funcName) => {
+
+	userId = checkString(userId, "User ID", funcName);
+
+	userId = userId.toLowerCase();
+
+	if (!/^[a-zA-Z0-9]+$/.test(userId)) {
+		throw "userId can only contain letters and numbers.";
+	}
+
+	if (userId.length < 5 || userId.length > 10) {
+		console.log(userId);
+		throw "userId must be 5-10 characters.";
+	}
+
+	return userId.toLowerCase();
+
+}
+
+const checkPassword = (password, funcName) => {
+
+	password = checkString(password, "Password", funcName);
+
+	if (password.length < 8) {
+		throw "Password must be at least 8 characters.";
+	}
+
+	if (!/[A-Z]/.test(password)) {
+		throw "Password needs an uppercase letter.";
+	}
+
+	if (!/[0-9]/.test(password)) {
+		throw "Password needs a number.";
+	}
+
+	if (!/[^\w\s]/.test(password)) {
+		throw "Password needs a special character.";
+	}
+
+	return password;
+
+}
+
 const checkCost = (cost, funcName) => {
 
     // Basic number validation.
@@ -67,5 +134,8 @@ export {
     checkId,
     checkNumber,
     checkDate,
+    checkName,
+    checkUserId,
+    checkPassword,
     checkCost
 };

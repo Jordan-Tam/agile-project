@@ -1,14 +1,21 @@
 import { Router } from "express";
 import xss from "xss";
-import { users as usersCollectionFn } from "../config/mongoCollections.js";
 import bcrypt from "bcryptjs";
+
+import { users as usersCollectionFn } from "../config/mongoCollections.js";
+import usersData from "../data/users.js";
 import { redirectIfLoggedIn } from "../middleware.js";
+import {
+	checkName,
+	checkUserId,
+	checkPassword
+} from "../helpers.js";
 
 const router = Router();
 const SALT_ROUNDS = 10;
 
 /* validation helpers */
-function validateName(value, label) {
+/* function validateName(value, label) {
 	if (typeof value !== "string") throw `${label} must be a string.`;
 	const s = value.trim();
 	if (!s) throw `${label} cannot be empty.`;
@@ -37,15 +44,17 @@ function validatePassword(pass, confirm) {
 function validateRole(value) {
 	const r = (value || "").toString().trim().toLowerCase();
 	return ["user", "superuser"].includes(r) ? r : "user"; // default to user
-}
+} */
 
 /* routes */
-router.get("/register", redirectIfLoggedIn, (req, res) => {
+router.get("/", redirectIfLoggedIn, (req, res) => {
 	res.status(200).render("register", { title: "Create your account" });
 });
 
-router.post("/register", async (req, res) => {
+router.post("/", async (req, res) => {
 	try {
+
+		/* OLD
 		const firstName = validateName(xss(req.body.firstName), "First name");
 		const lastName = validateName(xss(req.body.lastName), "Last name");
 		const userId = validateUserId(xss(req.body.userId));
@@ -54,7 +63,19 @@ router.post("/register", async (req, res) => {
 			xss(req.body.confirmPassword)
 		);
 		const role = validateRole(xss(req.body.role));
+		*/
 
+		// NEW
+		const firstName = checkName(xss(req.body.firstName), "First name", "POST /register");
+		const lastName = checkName(xss(req.body.lastName), "Last name", "POST /register");
+		const userId = checkUserId(xss(req.body.userId), "POST /register");
+		const password = checkPassword(xss(req.body.password), "POST /register");
+		const confirmPassword = checkPassword(xss(req.body.confirmPassword), "POST /register");
+		if (password !== confirmPassword) {
+			throw "Passwords do not match.";
+		}
+
+		/* OLD
 		const users = await usersCollectionFn();
 		await users.createIndex({ userId: 1 }, { unique: true });
 
@@ -75,7 +96,10 @@ router.post("/register", async (req, res) => {
 		};
 
 		const insert = await users.insertOne(doc);
-		if (!insert.acknowledged) throw "Unable to register user.";
+		if (!insert.acknowledged) throw "Unable to register user."; */
+
+		// NEW
+		await usersData.createUser(firstName, lastName, userId, password);
 
 		req.session.user = {
 			firstName,
