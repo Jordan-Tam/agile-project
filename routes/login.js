@@ -67,7 +67,6 @@ router.post("/", async (req, res) => {
 			firstName: user.firstName,
 			lastName: user.lastName,
 			userId: user.userId,
-			role: user.role,
 			signupDate: user.signupDate,
 			lastLogin: new Date().toLocaleString()
 		};

@@ -103,6 +103,7 @@ async function createTestUsers() {
 
 // Server management
 async function startServer() {
+	console.log("Starting server!!!!!!!");
 	return new Promise((resolve, reject) => {
 		console.log("Starting server...");
 		serverProcess = spawn("node", ["app.js"], {
@@ -179,7 +180,7 @@ async function run() {
 		stopServer();
 		try {
 			await closeConnection();
-		} catch {}
+		} catch (e) {}
 		process.exit(0);
 	}
 }

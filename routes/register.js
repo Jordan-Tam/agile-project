@@ -100,11 +100,11 @@ router.post("/", async (req, res) => {
 		// NEW
 		await usersData.createUser(firstName, lastName, userId, password);
 
+		const nowISO = new Date().toISOString();
 		req.session.user = {
 			firstName,
 			lastName,
 			userId,
-			role,
 			signupDate: nowISO,
 			lastLogin: new Date().toLocaleString()
 		};
@@ -114,14 +114,14 @@ router.post("/", async (req, res) => {
 			userId
 		});
 	} catch (err) {
+		console.log(err);
 		return res.status(400).render("register", {
 			title: "Create your account",
 			error: typeof err === "string" ? err : "Unable to register user.",
 			form: {
 				firstName: req.body?.firstName ?? "",
 				lastName: req.body?.lastName ?? "",
-				userId: req.body?.userId ?? "",
-				role: req.body?.role ?? "user"
+				userId: req.body?.userId ?? ""
 			}
 		});
 	}
