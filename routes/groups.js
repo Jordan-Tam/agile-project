@@ -110,8 +110,9 @@ router.route("/:groupId/:expenseId")
 
 	.delete(requireAuth, async (req, res) => {
 
-		// Get request body parameters.
-		let { groupId, expenseId } = req.body;
+		// Get path parameters.
+		let groupId = req.params.groupId;
+		let expenseId = req.params.expenseId;
 
 		// Input validation.
 		try {
