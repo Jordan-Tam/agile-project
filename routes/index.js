@@ -4,6 +4,13 @@ import signoutRoutes from "./signout.js";
 import groupRoutes from "./groups.js";
 
 const constructorMethod = (app) => {
+  app.get("/", (req, res) => {
+    if (req.session.user) {
+      res.redirect("/groups/new");
+    } else {
+      res.redirect("/login");
+    }
+  });
   app.use("/register", registerRoutes);
   app.use("/login", loginRoutes);
   app.use("/signout", signoutRoutes);

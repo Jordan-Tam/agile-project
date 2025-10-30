@@ -12,23 +12,6 @@ import {
 
 const router = Router();
 
-/* validation helpers */
-function validateUserId(value) {
-	if (typeof value !== "string") throw "userId must be a string.";
-	const s = value.trim();
-	if (!s) throw "userId cannot be empty.";
-	if (!/^[a-zA-Z0-9]+$/.test(s))
-		throw "userId can only contain letters and numbers.";
-	if (s.length < 5 || s.length > 10) throw "userId must be 5-10 characters.";
-	return s.toLowerCase();
-}
-
-function validatePasswordInput(pass) {
-	if (typeof pass !== "string") throw "Password must be a string.";
-	if (!pass || pass.trim().length === 0) throw "Password cannot be empty.";
-	return pass;
-}
-
 /* routes */
 router.get("/", redirectIfLoggedIn, (req, res) => {
 	res.status(200).render("login", { title: "Login" });
@@ -36,12 +19,7 @@ router.get("/", redirectIfLoggedIn, (req, res) => {
 
 router.post("/", async (req, res) => {
 	try {
-
-		// OLD
-		/* const userId = validateUserId(xss(req.body.userId));
-		const password = validatePasswordInput(xss(req.body.password)); */
 		
-		// NEW
 		const userId = checkUserId(xss(req.body.userId), "User", "POST /register");
 		const password = checkPassword(xss(req.body.password), "POST /register");
 

@@ -3,6 +3,16 @@ import { groups } from "../config/mongoCollections.js";
 import groupsData from "../data/groups.js";
 import expensesData from "../data/expenses.js";
 import { requireAuth } from "../middleware.js";
+import {
+    checkString,
+    checkId,
+    checkNumber,
+    checkDate,
+    checkName,
+    checkUserId,
+    checkPassword,
+    checkCost
+} from "../helpers.js";
 const router = express.Router();
 
 router.route("/new")
@@ -63,13 +73,31 @@ router.route("/:id")
 
 // Expense routes
 router.route("/:id/expense/new")
+
 	.get(requireAuth, async (req, res) => {
 		return res.render("groups/createExpense");
 	})
+
 	.post(requireAuth, async (req, res) => {
+		
+		// Get path and request body parameters.
+		let groupId = req.params.id;
+		let { name, cost, deadline, payee, payers } = req.body;
+
+		// Input validation.
 		try {
-			let groupId = req.params.id;
-			let { name, cost, deadline, payee, payers } = req.body;
+			groupId = checkId(groupId, "Group", "POST /:id/expense/new");
+			name = checkString(name, "Name", "POST /:id/expense/new");
+			cost = checkCost(cost, "POST /:id/expense/new");
+			deadline = checkDate(deadline, "Deadline", "POST /:id/expense/new");
+			payee = checkId(payee.toString(), "Payee", "POST /:id/expense/new");
+			for (let payer of payers) { checkId(payer.toString(), "Payer", "POST /:id/expense/new"); }
+		} catch (e) {
+			return res.status(400).json({error: e});
+		}
+
+		// Call data function to add the expense.
+		try {
 			return res.json(await expensesData.createExpense(
 				groupId, name, cost, deadline, payee, payers
 			));
@@ -78,15 +106,29 @@ router.route("/:id/expense/new")
 		}
 	});
 
-router.route("/:groupId/:expenseId").delete(requireAuth, async (req, res) => {
-	try {
+router.route("/:groupId/:expenseId")
+
+	.delete(requireAuth, async (req, res) => {
+
+		// Get request body parameters.
 		let { groupId, expenseId } = req.body;
-		return res.json(await expensesData.deleteExpense(
-			groupId, expenseId
-		));
-	} catch (e) {
-		return res.status(500).json({error: e});
-	}
-});
+
+		// Input validation.
+		try {
+			groupId = checkId(groupId, "Group", "DELETE /:groupId/:expenseId");
+			expenseId = checkId(expenseId, "Expense", "DELETE /:groupId/:expenseId");
+		} catch (e) {
+			return res.status(400).json({error: e});
+		}
+
+		// Call data function to delete expense.
+		try {
+			return res.json(await expensesData.deleteExpense(
+				groupId, expenseId
+			));
+		} catch (e) {
+			return res.status(500).json({error: e});
+		}
+	});
 
 export default router;
