@@ -1,6 +1,6 @@
 import {ObjectId} from "mongodb";
 import {groups} from "../config/mongoCollections.js";
-import {getUserByUserId} from './users.js';
+import usersData from './users.js';
 import groupsData from './groups.js';
 import {
     checkString,
@@ -25,10 +25,10 @@ const exportedMethods = {
         await groupsData.getGroupByID(group);
 
         // Check if payee ID exists.
-        //await getUserByUserId(payee.toString());
+        //await usersDatagetUserByUserId(payee.toString());
 
         // Check if payer ID exists.
-        //for (let payer of payers) { await  getUserByUserId(payer.toString()); }
+        //for (let payer of payers) { await usersDatagetUserByUserId(payer.toString()); }
 
         // Create the new expense object.
         let newExpense = {
@@ -80,6 +80,54 @@ const exportedMethods = {
 
         throw "This message should not appear.";
 
+    },
+
+    async getAllExpenses(groupId) {
+
+        // Input validation.
+        groupId = checkId(groupId, "Group", "getAllExpenses");
+
+        // Get group associated with groupId.
+        const groupsCollection = await groups();
+        const group = await groupsCollection.findOne({
+            _id: new ObjectId(groupId)
+        });
+
+        if (!group) {
+            throw "Group not found.";
+        }
+
+        return group.expenses;
+
+    },
+
+    async deleteExpense(groupId, expenseId) {
+
+        // Input validation.
+        groupId = checkId(groupId, "Group", "deleteExpense");
+        expenseId = checkId(expenseId, "Expense", "deleteExpense");
+
+        // Connect to the groups database.
+        const groupsCollection = await groups();
+
+        // Get the group associated with the given ID.
+        let group = await groupsData.getGroupByID(groupId);
+
+        // Remove the expense from the group.
+        const deleteInfo = await groupsCollection.findOneAndUpdate(
+            {_id: group._id},
+            {$pull: {expenses: {"_id": new ObjectId(expenseId)}}},
+            {returnDocument: "after"}
+        );
+
+        // Make sure the deletion was successful.
+        if (!deleteInfo) {
+            throw "Could not delete expense.";
+        }
+
+        // Return the returned document.
+        return deleteInfo;
+        
     }
 
 }
