@@ -2,7 +2,7 @@ import { Router } from "express";
 
 const router = Router();
 
-router.get("/signout", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     req.session.destroy((err) => {
       if (err) {

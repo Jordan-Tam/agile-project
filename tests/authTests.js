@@ -38,7 +38,6 @@ async function test_signup_success_then_duplicate() {
 		userId,
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 	expect(
 		res1.status === 201 || res1.status === 302,
@@ -51,7 +50,6 @@ async function test_signup_success_then_duplicate() {
 		userId,
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 	expect(res2.status === 400, `Expected 400 duplicate, got ${res2.status}`);
 	if (typeof res2.data === "string") {
@@ -69,7 +67,6 @@ async function test_signup_short_userid_400() {
 		userId: "x",
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 	expect(
 		res.status === 400,
@@ -84,7 +81,6 @@ async function test_signup_weak_password_400() {
 		userId: `weak${Date.now().toString().slice(-5)}`,
 		password: "password",
 		confirmPassword: "password",
-		role: "user"
 	});
 	expect(
 		res.status === 400,
@@ -99,7 +95,6 @@ async function test_signup_mismatch_password_400() {
 		userId: `mis${Date.now().toString().slice(-5)}`,
 		password: "Password!1",
 		confirmPassword: "Password!2",
-		role: "user"
 	});
 	expect(
 		res.status === 400,
@@ -114,7 +109,6 @@ async function test_signup_missing_firstName_400() {
 		userId: `missfn${Date.now().toString().slice(-5)}`,
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 	expect(
 		res.status === 400,
@@ -129,7 +123,6 @@ async function test_signup_missing_lastName_400() {
 		userId: `missln${Date.now().toString().slice(-5)}`,
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 	expect(
 		res.status === 400,
@@ -144,7 +137,6 @@ async function test_signup_invalid_firstName_digits_400() {
 		userId: `badfn${Date.now().toString().slice(-5)}`,
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 	expect(
 		res.status === 400,
@@ -159,7 +151,6 @@ async function test_signup_invalid_lastName_symbols_400() {
 		userId: `badln${Date.now().toString().slice(-5)}`,
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 	expect(
 		res.status === 400,
@@ -174,7 +165,6 @@ async function test_signup_non_alnum_userid_400() {
 		userId: "car@123",
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 	expect(
 		res.status === 400,
@@ -190,7 +180,6 @@ async function test_signup_firstName_too_long_400() {
 		userId: `toolfn${Date.now().toString().slice(-5)}`,
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 	expect(
 		res.status === 400,
@@ -206,7 +195,6 @@ async function test_signup_lastName_too_long_400() {
 		userId: `toolln${Date.now().toString().slice(-5)}`,
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 	expect(
 		res.status === 400,
@@ -221,7 +209,6 @@ async function test_signup_userid_too_long_400() {
 		userId: "danawest0011",
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 	expect(
 		res.status === 400,
@@ -240,7 +227,6 @@ async function test_login_success() {
 		userId,
 		password,
 		confirmPassword: password,
-		role: "user"
 	});
 	expect(
 		registerRes.status === 201 || registerRes.status === 302,
@@ -277,7 +263,6 @@ async function test_login_wrong_password_400() {
 		userId,
 		password: "Password!1",
 		confirmPassword: "Password!1",
-		role: "user"
 	});
 
 	const res = await postLogin({ userId, password: "WrongPassword!2" });
@@ -385,7 +370,7 @@ export async function runAuthTests() {
 			console.log(`PASS: ${t.name}`);
 		} catch (err) {
 			fails++;
-			console.error(`FAIL: ${t.name} -> ${err.message}`);
+			console.error(`FAIL: ${t.name} -> ${err}`);
 		}
 	}
 	return { total: tests.length, failed: fails };
