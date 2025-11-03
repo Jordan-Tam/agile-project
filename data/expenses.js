@@ -5,108 +5,169 @@ import groupsData from "./groups.js";
 import { checkString, checkId, checkCost, checkDate } from "../helpers.js";
 
 const exportedMethods = {
-	async createExpense(group, name, cost, deadline, payee, payers) {
-		// Input validation
-		group = checkId(group.toString(), "Group", "createExpense");
-		name = checkString(name, "Name", "createExpense");
-		cost = checkCost(cost, "createExpense");
-		deadline = checkDate(deadline, "Deadline", "createExpense");
-		payee = checkId(payee.toString(), "Payee", "createExpense");
-		for (let payer of payers)
-			checkId(payer.toString(), "Payer", "createExpense");
+  async createExpense(group, name, cost, deadline, payee, payers) {
+    // Input validation
+    group = checkId(group.toString(), "Group", "createExpense");
+    name = checkString(name, "Name", "createExpense");
+    cost = checkCost(cost, "createExpense");
+    deadline = checkDate(deadline, "Deadline", "createExpense");
+    payee = checkId(payee.toString(), "Payee", "createExpense");
+    for (let payer of payers)
+      checkId(payer.toString(), "Payer", "createExpense");
 
-		// Check that the group exists
-		const groupDoc = await groupsData.getGroupByID(group);
-		if (!groupDoc) throw `Error: Group ${group} not found.`;
+    // Check that the group exists
+    const groupDoc = await groupsData.getGroupByID(group);
+    if (!groupDoc) throw `Error: Group ${group} not found.`;
 
-		// Ensure the group has members
-		if (!groupDoc.groupMembers || groupDoc.groupMembers.length === 0) {
-			throw `Error: Group ${groupDoc.groupName} has no members. Cannot add expense.`;
-		}
+    // Ensure the group has members
+    if (!groupDoc.groupMembers || groupDoc.groupMembers.length === 0) {
+      throw `Error: Group ${groupDoc.groupName} has no members. Cannot add expense.`;
+    }
 
-		// Convert stored group member IDs to strings for comparison
-		const groupMemberIds = groupDoc.groupMembers.map((m) => m._id.toString());
+    // Convert stored group member IDs to strings for comparison
+    const groupMemberIds = groupDoc.groupMembers.map((m) => m._id.toString());
 
-		// Verify that the payee is in the group
-		if (!groupMemberIds.includes(payee.toString())) {
-			throw `Error: Payee ${payee} is not a member of group "${groupDoc.groupName}".`;
-		}
+    // Verify that the payee is in the group
+    if (!groupMemberIds.includes(payee.toString())) {
+      throw `Error: Payee ${payee} is not a member of group "${groupDoc.groupName}".`;
+    }
 
-		// Verify that every payer is in the group
-		for (let payer of payers) {
-			if (!groupMemberIds.includes(payer.toString())) {
-				throw `Error: Payer ${payer} is not a member of group "${groupDoc.groupName}".`;
-			}
-		}
+    // Verify that every payer is in the group
+    for (let payer of payers) {
+      if (!groupMemberIds.includes(payer.toString())) {
+        throw `Error: Payer ${payer} is not a member of group "${groupDoc.groupName}".`;
+      }
+    }
 
-		// Create the new expense object
-		const newExpense = {
-			_id: new ObjectId(),
-			group: new ObjectId(group),
-			name,
-			cost,
-			deadline,
-			payee,
-			payers
-		};
+    // Create the new expense object
+    const newExpense = {
+      _id: new ObjectId(),
+      group: new ObjectId(group),
+      name,
+      cost,
+      deadline,
+      payee,
+      payers,
+    };
 
-		// Add to the group's expenses array
-		const groupsCollection = await groups();
-		const updateResult = await groupsCollection.findOneAndUpdate(
-			{ _id: new ObjectId(group) },
-			{ $push: { expenses: newExpense } },
-			{ returnDocument: "after" }
-		);
+    // Add to the group's expenses array
+    const groupsCollection = await groups();
+    const updateResult = await groupsCollection.findOneAndUpdate(
+      { _id: new ObjectId(group) },
+      { $push: { expenses: newExpense } },
+      { returnDocument: "after" }
+    );
 
-		if (!updateResult) throw "Error: Failed to insert expense.";
+    if (!updateResult) throw "Error: Failed to insert expense.";
 
-		// Return the inserted expense document
-		return newExpense;
-	},
+    // Return the inserted expense document
+    return newExpense;
+  },
 
-	async getAllExpenses(groupId) {
-		// Input validation.
-		groupId = checkId(groupId, "Group", "getAllExpenses");
+  async getAllExpenses(groupId) {
+    // Input validation.
+    groupId = checkId(groupId, "Group", "getAllExpenses");
 
-		// Get group associated with groupId.
-		const groupsCollection = await groups();
-		const group = await groupsCollection.findOne({
-			_id: new ObjectId(groupId)
-		});
+    // Get group associated with groupId.
+    const groupsCollection = await groups();
+    const group = await groupsCollection.findOne({
+      _id: new ObjectId(groupId),
+    });
 
-		if (!group) {
-			throw "Group not found.";
-		}
+    if (!group) {
+      throw "Group not found.";
+    }
 
-		return group.expenses;
-	},
+    return group.expenses;
+  },
 
-	async deleteExpense(groupId, expenseId) {
-		// Input validation.
-		groupId = checkId(groupId, "Group", "deleteExpense");
-		expenseId = checkId(expenseId, "Expense", "deleteExpense");
+  async deleteExpense(groupId, expenseId) {
+    // Input validation.
+    groupId = checkId(groupId, "Group", "deleteExpense");
+    expenseId = checkId(expenseId, "Expense", "deleteExpense");
 
-		// Connect to the groups database.
-		const groupsCollection = await groups();
+    // Connect to the groups database.
+    const groupsCollection = await groups();
 
-		// Get the group associated with the given ID.
-		let group = await groupsData.getGroupByID(groupId);
+    // Get the group associated with the given ID.
+    let group = await groupsData.getGroupByID(groupId);
 
-		// Remove the expense from the group.
-		const deleteInfo = await groupsCollection.findOneAndUpdate(
-			{ _id: new ObjectId(group._id) },
-			{ $pull: { expenses: { _id: new ObjectId(expenseId) } } },
-			{ returnDocument: "after" }
-		);
+    // Remove the expense from the group.
+    const deleteInfo = await groupsCollection.findOneAndUpdate(
+      { _id: new ObjectId(group._id) },
+      { $pull: { expenses: { _id: new ObjectId(expenseId) } } },
+      { returnDocument: "after" }
+    );
 
-		// Make sure the deletion was successful.
-		if (!deleteInfo) {
-			throw "Could not delete expense.";
-		}
+    // Make sure the deletion was successful.
+    if (!deleteInfo) {
+      throw "Could not delete expense.";
+    }
 
-		// Return the returned document.
-		return deleteInfo;
-	}
+    // Return the returned document.
+    return deleteInfo;
+  },
+
+  // Edit Expense
+  async editExpense(groupId, expenseId, name, cost, deadline, payee, payers) {
+    // Input validation
+    groupId = checkId(groupId, "Group", "editExpense");
+    expenseId = checkId(expenseId, "Expense", "editExpense");
+    name = checkString(name, "Name", "editExpense");
+    cost = checkCost(cost, "editExpense");
+    deadline = checkDate(deadline, "Deadline", "editExpense");
+    payee = checkId(payee.toString(), "Payee", "editExpense");
+    for (let payer of payers) checkId(payer.toString(), "Payer", "editExpense");
+
+    // Verify Group exists
+    const groupDoc = await groupsData.getGroupByID(groupId);
+    if (!groupDoc) throw `Error: Group ${groupId} not found.`;
+
+    // Verify Payee and all Payers are in the Group
+    const groupMemberIds = groupDoc.groupMembers.map((m) => m._id.toString());
+
+    if (!groupMemberIds.includes(payee.toString())) {
+      throw `Error: Payee ${payee} is not a member of group "${groupDoc.groupName}".`;
+    }
+    for (let payer of payers) {
+      if (!groupMemberIds.includes(payer.toString())) {
+        throw `Error: Payer ${payer} is not a member of group "${groupDoc.groupName}".`;
+      }
+    }
+
+    // Get Expnse to verfy it exists
+    const expenses = groupDoc.expenses;
+    const expenseIndex = expenses.findIndex(
+      (exp) => exp._id.toString() === expenseId
+    );
+    if (expenseIndex === -1) {
+      throw `Error: Expense ${expenseId} not found in group "${groupDoc.groupName}".`;
+    }
+
+    // Update the expense fields
+    const groupsCollection = await groups();
+    const updateResult = await groupsCollection.findOneAndUpdate(
+      { _id: new ObjectId(groupId), "expenses._id": new ObjectId(expenseId) },
+      {
+        $set: {
+          "expenses.$.name": name,
+          "expenses.$.cost": cost,
+          "expenses.$.deadline": deadline,
+          "expenses.$.payee": payee,
+          "expenses.$.payers": payers,
+        },
+      },
+      { returnDocument: "after" }
+    );
+
+    if (!updateResult) throw "Error: Failed to update expense.";
+
+    // Fetch and return the updated expense, avoid returnign whole group everytime
+    const updatedExpense = updateResult.expenses.find(
+      (exp) => exp._id.toString() === expenseId
+    );
+    return updatedExpense;
+  },
 };
 
 export default exportedMethods;
