@@ -88,11 +88,63 @@
       {{/if}}
   </div>
 
-  
+  <!-- Expense Details Modal -->
+  <div id="expenseModal" class="modal">
+      <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2>Expense Details</h2>
+        <div id="modalBody">
+            <p><strong>Name:</strong> <span id="modal-name"></span></p>
+            <p><strong>Cost:</strong> $<span id="modal-cost"></span></p>
+            <p><strong>Deadline:</strong> <span id="modal-deadline"></span></p>
+            <p><strong>Payee:</strong> <span id="modal-payee"></span></p>
+            <p><strong>Payers:</strong></p>
+            <ul id="modal-payers"></ul>
+        </div>
+      </div>
+  </div>
   {{/if}}
 
   <script>
-      
+      // Modal functionality
+      const modal = document.getElementById('expenseModal');
+      const closeBtn = document.querySelector('.close');
+      const viewDetailsBtns = document.querySelectorAll('.view-details-btn');
+
+      viewDetailsBtns.forEach(btn => {
+          btn.addEventListener('click', function() {
+              const name = this.getAttribute('data-expense-name');
+              const cost = this.getAttribute('data-expense-cost');
+              const deadline = this.getAttribute('data-expense-deadline');
+              const payee = this.getAttribute('data-expense-payee');
+              const payers = JSON.parse(this.getAttribute('data-expense-payers'));
+
+              document.getElementById('modal-name').textContent = name;
+              document.getElementById('modal-cost').textContent = cost;
+              document.getElementById('modal-deadline').textContent = deadline;
+              document.getElementById('modal-payee').textContent = payee;
+
+              const payersList = document.getElementById('modal-payers');
+              payersList.innerHTML = '';
+              payers.forEach(payer => {
+                  const li = document.createElement('li');
+                  li.textContent = payer;
+                  payersList.appendChild(li);
+              });
+
+              modal.style.display = 'block';
+          });
+      });
+
+      closeBtn.addEventListener('click', function() {
+          modal.style.display = 'none';
+      });
+
+      window.addEventListener('click', function(event) {
+          if (event.target === modal) {
+              modal.style.display = 'none';
+          }
+      });
 
       // Delete expense functionality
       const deleteExpenseBtns = document.querySelectorAll('.delete-expense-btn');
