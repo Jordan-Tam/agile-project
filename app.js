@@ -18,7 +18,17 @@ app.use(
 	})
 );
 
-app.engine("handlebars", exphbs.engine({ defaultLayout: "main" }));
+app.engine(
+	"handlebars",
+	exphbs.engine({
+		defaultLayout: "main",
+		helpers: {
+			json: function (context) {
+				return JSON.stringify(context);
+			}
+		}
+	})
+);
 app.set("view engine", "handlebars");
 configRoutes(app);
 
