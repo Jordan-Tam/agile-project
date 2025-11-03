@@ -207,5 +207,73 @@ router.route("/:groupId/:expenseId")
       res.status(500).render("error", { error: e.toString() });
     }
   });
+  router.route("/:id/removeMember")
+
+  // GET route - show remove member form
+  .get(requireAuth, async (req, res) => {
+    try {
+      const groupId = checkId(req.params.id, "Group ID", "GET /:id/removeMember");
+      const group = await groupsData.getGroupByID(groupId);
+
+      if (!group.groupMembers || group.groupMembers.length === 0) {
+        return res.status(400).render("error", { error: "No members to remove in this group." });
+      }
+
+      res.render("groups/removeMember", {
+        title: "Remove Member",
+        group: group,
+        members: group.groupMembers
+      });
+    } catch (e) {
+      res.status(400).render("error", { error: e.toString() });
+    }
+  })
+
+  // POST route - handle member removal
+  .post(requireAuth, async (req, res) => {
+      let groupId = req.params.id;
+    let { user_id } = req.body;
+
+    let group;
+    try {
+        groupId = checkId(groupId, "Group ID", "POST /:id/removeMember");
+
+        // Fetch the group so we can use it in case of validation errors
+        group = await groupsData.getGroupByID(groupId);
+
+        user_id = checkId(user_id, "User ID", "POST /:id/removeMember");
+    } catch (e) {
+        return res.status(400).render("groups/removeMember", {
+            title: "Remove Member",
+            group: group, // now defined
+            members: group ? group.groupMembers : [],
+            error: e.toString()
+        });
+    }
+
+    // Call data function to remove member
+    try {
+        const updatedGroup = await groupsData.removeMember(groupId, user_id);
+        const allGroups = await groupsData.getAllGroups();
+
+        res.render("groups/group", {
+            title: "Member Removed",
+            group: updatedGroup,
+            group_name: updatedGroup.groupName,
+            group_description: updatedGroup.groupDescription,
+            groupMembers: updatedGroup.groupMembers,
+            groups: allGroups,
+            success: "Member removed successfully!"
+        });
+    } catch (e) {
+        return res.status(400).render("groups/removeMember", {
+            title: "Remove Member",
+            group: group,
+            members: group.groupMembers,
+            error: e.toString()
+        });
+    }
+  });
+
 
 export default router;

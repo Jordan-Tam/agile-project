@@ -41,6 +41,10 @@
     <form action="/groups/{{group._id}}/addMember" method="get" style="display:inline;">
       <button type="submit">Add Member</button>
     </form>
+
+    <form action="/groups/{{group._id}}/removeMember" method="get" style="display:inline;">
+        <button type="submit">Remove Member</button>
+    </form>
   </div>
 
   {{#if groupMembers}}
