@@ -19,21 +19,21 @@ export async function runExpenseTests() {
 
 	await groupsData.addMember(
 		group_1._id.toString(),
-		usersList[0].firstName,
-		usersList[0].lastName,
-		usersList[0].userId
+		/* usersList[0].firstName,
+		usersList[0].lastName, */
+		usersList[0]._id.toString()
 	);
 	await groupsData.addMember(
 		group_1._id.toString(),
-		usersList[1].firstName,
-		usersList[1].lastName,
-		usersList[1].userId
+		/* usersList[1].firstName,
+		usersList[1].lastName, */
+		usersList[1]._id.toString()
 	);
 	await groupsData.addMember(
 		group_1._id.toString(),
-		usersList[2].firstName,
-		usersList[2].lastName,
-		usersList[2].userId
+		/* usersList[2].firstName,
+		usersList[2].lastName, */
+		usersList[2]._id.toString()
 	);
 
 	// TESTS FOR CREATING AN EXPENSE
