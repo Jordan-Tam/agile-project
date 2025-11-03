@@ -1,22 +1,23 @@
-// import auth_routes from "./auth_routes.js";
 import registerRoutes from "./register.js";
-import signoutRoutes from "./signout.js";
 import loginRoutes from "./login.js";
-import { requireAuth } from "../middleware.js";
-import { static as staticDir } from "express";
+import signoutRoutes from "./signout.js";
+import groupRoutes from "./groups.js";
 
 const constructorMethod = (app) => {
-  // app.use("/", auth_routes);
-  app.use("/home", requireAuth, (req, res) => {
-    res.render("home");
-  })
-  app.use("/", registerRoutes);
-  app.use("/", loginRoutes);
-  app.use("/", signoutRoutes);
-  app.use("/public", staticDir("public"));
-  // per announcement
+  app.get("/", (req, res) => {
+    if (req.session.user) {
+      res.redirect("/groups/new");
+    } else {
+      res.redirect("/login");
+    }
+  });
+  app.use("/register", registerRoutes);
+  app.use("/login", loginRoutes);
+  app.use("/signout", signoutRoutes);
+  app.use("/groups", groupRoutes);
   app.use(/(.*)/, (req, res) => {
     res.status(404).json({ error: "Not found" });
   });
+
 };
 export default constructorMethod;

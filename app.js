@@ -1,10 +1,13 @@
 import express from "express";
 import session from "express-session";
-import configRoutes from "./routes/index.js";
 import exphbs from "express-handlebars";
-import groupRoutes from "./routes/groups.js";
+import configRoutes from "./routes/index.js";
 
 const app = express();
+app.use(express.json());
+app.use("/public", express.static("public"));
+app.use("/static", express.static("static"));
+app.use(express.urlencoded({ extended: true }));
 
 app.use(
 	session({
@@ -15,21 +18,8 @@ app.use(
 	})
 );
 
-app.use("/public", express.static("public"));
-app.use("/static", express.static("static"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.engine("handlebars", exphbs.engine({ defaultLayout: "main" }));
 app.set("view engine", "handlebars");
-app.use("/groups", groupRoutes);
-// Default route
-app.get("/", (req, res) => {
-	if (req.session.user) {
-		res.redirect("/groups/new");
-	} else {
-		res.redirect("/login");
-	}
-});
 configRoutes(app);
 
 // Start the server
