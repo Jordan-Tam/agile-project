@@ -12,26 +12,40 @@ import {
 const exportedMethods = {
 
     async createExpense(group, name, cost, deadline, payee, payers) {
-
-        // Input validation.
+        // Input validation
         group = checkId(group.toString(), "Group", "createExpense");
         name = checkString(name, "Name", "createExpense");
         cost = checkCost(cost, "createExpense");
         deadline = checkDate(deadline, "Deadline", "createExpense");
         payee = checkId(payee.toString(), "Payee", "createExpense");
-        for (let payer of payers) { checkId(payer.toString(), "Payer", "createExpense"); }
+        for (let payer of payers) checkId(payer.toString(), "Payer", "createExpense");
 
-        // Check if group ID exists.
-        await groupsData.getGroupByID(group);
+        // Check that the group exists
+        const groupDoc = await groupsData.getGroupByID(group);
+        if (!groupDoc) throw `Error: Group ${group} not found.`;
 
-        // Check if payee ID exists.
-        //await usersDatagetUserByUserId(payee.toString());
+        // Ensure the group has members
+        if (!groupDoc.groupMembers || groupDoc.groupMembers.length === 0) {
+            throw `Error: Group ${groupDoc.groupName} has no members. Cannot add expense.`;
+        }
 
-        // Check if payer ID exists.
-        //for (let payer of payers) { await usersDatagetUserByUserId(payer.toString()); }
+        // Convert stored group member IDs to strings for comparison
+        const groupMemberIds = groupDoc.groupMembers.map(m => m.toString());
 
-        // Create the new expense object.
-        let newExpense = {
+        // Verify that the payee is in the group
+        if (!groupMemberIds.includes(payee.toString())) {
+            throw `Error: Payee ${payee} is not a member of group "${groupDoc.groupName}".`;
+        }
+
+        // Verify that every payer is in the group
+        for (let payer of payers) {
+            if (!groupMemberIds.includes(payer.toString())) {
+                throw `Error: Payer ${payer} is not a member of group "${groupDoc.groupName}".`;
+            }
+        }
+
+        // Create the new expense object
+        const newExpense = {
             _id: new ObjectId(),
             group: new ObjectId(group),
             name,
@@ -41,45 +55,18 @@ const exportedMethods = {
             payers
         };
 
+        // Add to the group's expenses array
         const groupsCollection = await groups();
-
-        // Insert expense subdocument into the group's expenses array.
-        const insertExpenseToGroup = await groupsCollection.findOneAndUpdate(
-            {_id: new ObjectId(group)},
-            {$push: {expenses: newExpense}},
-            {returnDocument: "after"}
+        const updateResult = await groupsCollection.findOneAndUpdate(
+            { _id: new ObjectId(group) },
+            { $push: { expenses: newExpense } },
+            { returnDocument: "after" }
         );
 
-        // Return the expense subdocument.
-        return insertExpenseToGroup;
+        if (!updateResult) throw "Error: Failed to insert expense.";
 
-    },
-
-    async getExpenseById(id) {
-
-        // Input validation.
-        id = checkId(id);
-
-        const groupsCollection = await groups();
-
-        // Get the group that this expense belongs to.
-        let group = await groupsCollection.findOne(
-            {"expenses._id": new ObjectId(id)}
-        );
-
-        if (!group) {
-            throw "Expense not found."
-        };
-
-        // Find the expense subdocument and return it.
-        for (let expense of group.expenses) {
-            if (expense._id.toString() === id) {
-                return expense;
-            }
-        }
-
-        throw "This message should not appear.";
-
+        // Return the inserted expense document
+        return newExpense;
     },
 
     async getAllExpenses(groupId) {

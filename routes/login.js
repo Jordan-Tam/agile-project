@@ -50,7 +50,7 @@ router.post("/", async (req, res) => {
 		};
 
 		// Redirect to groups page or home
-		return res.redirect("/groups/new");
+		return res.redirect("/groups");
 	} catch (err) {
 		return res.status(400).render("login", {
 			title: "Login",
