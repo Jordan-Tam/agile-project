@@ -4,11 +4,7 @@ import { users as usersCollectionFn } from "../config/mongoCollections.js";
 import bcrypt from "bcryptjs";
 import { redirectIfLoggedIn } from "../middleware.js";
 import usersData from "../data/users.js";
-import {
-	checkName,
-	checkUserId,
-	checkPassword
-} from "../helpers.js";
+import { checkName, checkUserId, checkPassword } from "../helpers.js";
 
 const router = Router();
 
@@ -19,7 +15,6 @@ router.get("/", redirectIfLoggedIn, (req, res) => {
 
 router.post("/", async (req, res) => {
 	try {
-		
 		const userId = checkUserId(xss(req.body.userId), "User", "POST /register");
 		const password = checkPassword(xss(req.body.password), "POST /register");
 
@@ -42,6 +37,7 @@ router.post("/", async (req, res) => {
 
 		// Set session
 		req.session.user = {
+			_id: user._id.toString(),
 			firstName: user.firstName,
 			lastName: user.lastName,
 			userId: user.userId,
