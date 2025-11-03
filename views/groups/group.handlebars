@@ -1,3 +1,54 @@
-<h1>{{group_name}}</h1>
-<p>{{group_description}}</p>
-<button>Add Expense</button>
+<form action="/groups/new" method="get" style="display:inline;">
+  <button type="submit">Create Group</button>
+</form>
+
+{{#if success}}
+  <p class="success">{{success}}</p>
+{{/if}}
+
+{{#if error}}
+  <p class="error">{{error}}</p>
+{{/if}}
+
+{{#if groups}}
+  <h2>All Groups</h2>
+  <ul>
+    {{#each groups}}
+      <li>
+        <a href="/groups/{{this._id}}">{{this.groupName}}</a>
+        {{#if this.groupDescription}}
+          <p>{{this.groupDescription}}</p>
+        {{/if}}
+      </li>
+    {{/each}}
+  </ul>
+{{else}}
+  {{#unless group}}
+    <p>No groups yet. Create your first group!</p>
+  {{/unless}}
+{{/if}}
+
+{{#if group}}
+  <hr>
+  <h1>{{group_name}}</h1>
+  <p>{{group_description}}</p>
+
+  <div class="group-actions">
+    <form action="/groups/{{group._id}}/expense/new" method="get" style="display:inline;">
+      <button type="submit">Add Expense</button>
+    </form>
+
+    <form action="/groups/{{group._id}}/addMember" method="get" style="display:inline;">
+      <button type="submit">Add Member</button>
+    </form>
+  </div>
+
+  {{#if groupMembers}}
+    <h2>Group Members</h2>
+    <ul>
+      {{#each groupMembers}}
+        <li>{{this.firstName}} {{this.lastName}}</li>
+      {{/each}}
+    </ul>
+  {{/if}}
+{{/if}}

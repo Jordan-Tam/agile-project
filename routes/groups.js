@@ -29,46 +29,54 @@ router.route("/new")
 	// POST route - handle form submission
 	.post(requireAuth, async (req, res) => {
 		try {
-			let { groupName, groupDescription } = req.body;
+		let { groupName, groupDescription } = req.body;
 
-			if (!groupName || !groupDescription) {
-				return res.status(400).render("groups/createGroup", {
-					title: "Create a Group",
-					error: "Both group name and description are required."
-				});
-			}
-
-			const newGroup = await groupsData.createGroup(groupName, groupDescription);
-
-			// redirect or show confirmation page
-			res.render("groups/groupCreated", {
-				title: "Group Created",
-				group: newGroup,
-				success: "Group created successfully!"
-			});
-		} catch (e) {
-			res.status(400).render("groups/createGroup", {
+		if (!groupName || !groupDescription) {
+			return res.status(400).render("groups/createGroup", {
 				title: "Create a Group",
-				error: e.toString()
+				error: "Both group name and description are required."
 			});
 		}
-	});
+
+		const newGroup = await groupsData.createGroup(groupName, groupDescription);
+		const allGroups = await groupsData.getAllGroups();
+
+		res.render("groups/group", {
+		title: "Group Created",
+		group: newGroup,
+		group_name: newGroup.groupName,
+		group_description: newGroup.groupDescription,
+		groups: allGroups,
+		success: "Group created successfully!"
+    });
+	} catch (e) {
+		res.status(400).render("groups/createGroup", {
+		title: "Create a Group",
+		error: e.toString()
+		});
+	}
+});
 
 router.route("/:id")
 	.get(requireAuth, async (req, res) => {
-		try {
-			const id = checkId(req.params.id);
-			const group = await groupsData.getGroupByID(id);
-			return res.render("groups/group", {
-				group_name: group.groupName,
-				group_description: group.groupDescription
-			});
-		} catch (e) {
-			return res.status(404).render("error", {
-				error: "Group Not Found"
-			});
-		}
-	});
+    try {
+      const id = checkId(req.params.id);
+      const group = await groupsData.getGroupByID(id);
+      const allGroups = await groupsData.getAllGroups();
+      
+      return res.render("groups/group", {
+        group: group,
+        group_name: group.groupName,
+        group_description: group.groupDescription,
+        groupMembers: group.groupMembers,
+        groups: allGroups
+      });
+    } catch (e) {
+      return res.status(404).render("error", {
+        error: "Group Not Found"
+      });
+    }
+  });
 
 
 // Expense routes
@@ -131,5 +139,73 @@ router.route("/:groupId/:expenseId")
 			return res.status(500).json({error: e});
 		}
 	});
+
+	router.route("/:id/addMember")
+
+  // GET route - render "add member" form
+  .get(requireAuth, async (req, res) => {
+    try {
+      const groupId = checkId(req.params.id);
+      const group = await groupsData.getGroupByID(groupId);
+
+      res.render("groups/addMember", {
+        title: "Add Member",
+        group: group
+      });
+    } catch (e) {
+      res.status(400).render("error", { error: e.toString() });
+    }
+  })
+
+  // POST route - handle form submission
+  .post(requireAuth, async (req, res) => {
+    let groupId = req.params.id;
+    let { first_name, last_name, user_id } = req.body;
+
+    // Input validation
+    try {
+      groupId = checkId(groupId, "Group ID", "POST /:id/addMember");
+      first_name = checkString(first_name, "First Name", "POST /:id/addMember");
+      last_name = checkString(last_name, "Last Name", "POST /:id/addMember");
+      user_id = checkUserId(user_id, "User ID", "POST /:id/addMember");
+    } catch (e) {
+      return res.status(400).render("groups/addMember", {
+        title: "Add Member",
+        error: e.toString()
+      });
+    }
+
+    // Call data function to add the member
+    try {
+      const updatedGroup = await groupsData.addMember(groupId, first_name, last_name, user_id);
+	  const allGroups = await groupsData.getAllGroups();
+      res.render("groups/group", {
+        title: "Group Updated",
+        group_name: updatedGroup.groupName,
+        group_description: updatedGroup.groupDescription,
+        groupMembers: updatedGroup.groupMembers,
+		groups: allGroups,
+        success: "Member added successfully!"
+      });
+    } catch (e) {
+      res.status(400).render("groups/addMember", {
+        title: "Add Member",
+        error: e.toString()
+      });
+    }
+  });
+  router.route("/")
+  .get(requireAuth, async (req, res) => {
+    try {
+      const allGroups = await groupsData.getAllGroups(); // you can adjust this
+      res.render("groups/group", {
+        title: "Your Groups",
+        groups: allGroups,
+        user: req.session.user
+      });
+    } catch (e) {
+      res.status(500).render("error", { error: e.toString() });
+    }
+  });
 
 export default router;
