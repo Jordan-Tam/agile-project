@@ -94,4 +94,29 @@ export async function runGroupTests() {
 	console.error("addMember tests failed:", err);
 }
 
+try {
+			// --- Invalid argument tests ---
+			await chai
+				.expect(groupsData.removeMember())
+				.to.be.rejectedWith("undefined ID is required.");
+			await chai
+				.expect(groupsData.removeMember("   ", "123"))
+				.to.be.rejectedWith("undefined ID cannot be an empty string or just spaces.");
+			await chai
+				.expect(groupsData.removeMember("123", "   "))
+				.to.be.rejectedWith("undefined ID is not a valid ID.");
+			await chai
+				.expect(groupsData.removeMember(123, "456"))
+				.to.be.rejectedWith("undefined ID must be a string.");
+			await chai
+				.expect(groupsData.removeMember("123", 456))
+				.to.be.rejectedWith("undefined ID is not a valid ID.");
+
+			console.log("\n=== removeMember Test Summary ===");
+			console.log("All removeMember validation tests passed.");
+		} catch (err) {
+			console.error("removeMember tests failed:", err);
+			throw err;
+		}
+
 }
