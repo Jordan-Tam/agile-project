@@ -1,15 +1,4 @@
 <div class="group-container">
-  <form action="/groups/new" method="get" style="display:inline;">
-    <button type="submit">Create Group</button>
-  </form>
-
-  {{#if success}}
-    <p class="success">{{success}}</p>
-  {{/if}}
-
-  {{#if error}}
-    <p class="error">{{error}}</p>
-  {{/if}}
 
   {{#if groups}}
     <h2>All Groups</h2>
@@ -34,15 +23,27 @@
     <h1>{{group_name}}</h1>
     <p>{{group_description}}</p>
 
-    <div class="group-actions">
-      <form action="/groups/{{group._id}}/expense/new" method="get" style="display:inline;">
-        <button type="submit">Add Expense</button>
-      </form>
+     <div class="group-actions">
+    <form action="/groups/{{group._id}}/expense/new" method="get" style="display:inline;">
+      <button type="submit">Add Expense</button>
+    </form>
 
-      <form action="/groups/{{group._id}}/addMember" method="get" style="display:inline;">
-        <button type="submit">Add Member</button>
-      </form>
-    </div>
+    <form action="/groups/{{group._id}}/addMember" method="get" style="display:inline;">
+      <button type="submit">Add Member</button>
+    </form>
+
+    <form action="/groups/{{group._id}}/removeMember" method="get" style="display:inline;">
+        <button type="submit">Remove Member</button>
+    </form>
+  </div>
+  
+   {{#if success}}
+    <p class="success">{{success}}</p>
+  {{/if}}
+
+  {{#if error}}
+    <p class="error">{{error}}</p>
+  {{/if}}
 
     {{#if groupMembers}}
       <h2>Group Members</h2>

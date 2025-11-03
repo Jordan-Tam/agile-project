@@ -142,7 +142,51 @@ const exportedMethods = {
 		}
 
 		return updatedGroup;
-	}
+	},
+    // Remove a member from a group
+async removeMember(groupId, user_id) {
+    // === Input validation ===
+    groupId = checkId(groupId);
+    user_id = checkId(user_id);
+
+    // === Check if group exists ===
+    const groupCollection = await groups();
+    const groupObjectId = new ObjectId(groupId);
+    const group = await groupCollection.findOne({ _id: groupObjectId });
+    if (!group) throw 'Error: Group not found';
+
+    // === Find the user in the system ===
+    const userList = await user.getAllUsers(); // returns array
+    const theUser = userList.find(u => u._id.toString() === user_id);
+    if (!theUser) throw 'Error: No user found with this user ID';
+
+    // === Check if the user is actually in the group ===
+    const isMember = group.groupMembers?.some(
+        m => m.toString() === theUser._id.toString()
+    );
+    if (!isMember) throw 'Error: This user is not a member of the group';
+
+    // === Remove the user from the group ===
+    const updateResult = await groupCollection.updateOne(
+        { _id: groupObjectId },
+        { $pull: { groupMembers: theUser._id } }
+    );
+
+    if (updateResult.modifiedCount === 0)
+        throw 'Error: Could not remove member from the group';
+
+    // === Return the updated group (with stringified IDs) ===
+    const updatedGroup = await groupCollection.findOne({ _id: groupObjectId });
+    if (!updatedGroup) throw 'Error: Group not found after removing member';
+
+    updatedGroup._id = updatedGroup._id.toString();
+    updatedGroup.groupMembers = updatedGroup.groupMembers
+        ? updatedGroup.groupMembers.map(m => m.toString())
+        : [];
+
+    return updatedGroup;
+}
+
 };
 
 export default exportedMethods;
