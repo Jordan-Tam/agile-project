@@ -1,5 +1,67 @@
-<h1>Add Expense</h1>
+{{> header}}
 
-<form action="/expenses/new" method="POST">
-    <label></label>
-</form>
+<div class="container-fluid">
+
+    <h1 class="mb-3">Add Expense</h1>
+
+	{{#if error}}
+		<div class="error-message">
+			<p>{{error}}</p>
+		</div>
+	{{/if}}
+
+    <form method="POST" action="/groups/{{groupId}}/expense/new" id="login-form">
+        <div class="form-floating w-25 mb-3">
+            <input
+                class="form-control"
+                placeholder="Name goes here"
+                id="name"
+                name="name"
+                value="{{form.name}}"
+                required
+            />
+            <label for="name">Name</label>
+        </div>
+        <div class="form-floating w-25 mb-3">
+            <input
+                class="form-control"
+                placeholder="Cost goes here"
+                type="number"
+                id="cost"
+                name="cost"
+                value="{{form.cost}}"
+                required
+            />
+            <label for="cost">Cost</label>
+        </div>
+        <div class="form-floating w-25 mb-3">
+            <input
+                class="form-control"
+                placeholder="Deadline goes here"
+                type="date"
+                id="deadline"
+                name="deadline"
+                value="{{form.deadline}}"
+                required
+            />
+            <label for="deadline">Deadline</label>
+        </div>
+        <p>Payee:</p>
+        {{#each group.groupMembers}}
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" value="{{_id}}" id="payee-{{userId}}" name="payee[]" />
+            <label class="form-check-label" for="{{userId}}">{{userId}}</label>
+        </div>
+        {{/each}}
+        <p>Payers:</p>
+        {{#each group.groupMembers}}
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" value="{{_id}}" id="payer-{{userId}}" name="payers[]" />
+            <label class="form-check-label" for="{{userId}}">{{userId}}</label>
+        </div>
+        {{/each}}
+        <button type="submit" class="btn btn-primary">Add Expense</button>
+    </form>
+</div>
+
+{{> bootstrap-js}}

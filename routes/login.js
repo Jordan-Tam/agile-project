@@ -53,7 +53,6 @@ router.post("/", async (req, res) => {
 		return res.redirect("/home");
 
 	} catch (err) {
-		console.log(err);
 		return res.status(400).render("login", {
 			title: "Login",
 			error: typeof err === "string" ? err : "Unable to login.",

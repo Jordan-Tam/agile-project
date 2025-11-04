@@ -22,6 +22,7 @@ const exportedMethods = {
 					return {
 						firstName: matched.firstName,
 						lastName: matched.lastName,
+						userId: matched.userId,
 						_id: matched._id.toString()
 					};
 				} else {
