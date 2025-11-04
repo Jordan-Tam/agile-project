@@ -9,10 +9,7 @@ router.get("/", async (req, res) => {
         return res.status(500).send("Error while logging out.");
       }
       res.clearCookie("AuthenticationState");
-      res.render("signout", {
-        title: "Signed Out",
-        message: "You have been logged out successfully.",
-      });
+      res.redirect("/login");
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

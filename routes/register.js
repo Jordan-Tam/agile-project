@@ -14,7 +14,11 @@ const router = Router();
 
 /* routes */
 router.get("/", redirectIfLoggedIn, (req, res) => {
-	res.status(200).render("register", { title: "Create your account" });
+	res.status(200).render("register", {
+		title: "Register",
+		hide: true,
+		disable_brand: true
+	});
 });
 
 router.post("/", async (req, res) => {

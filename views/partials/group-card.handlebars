@@ -1,0 +1,20 @@
+<div class="col">
+    <div class="card text-bg-light w-50 mb-3">
+        <div class="card-body">
+            <h4 class="card-title">
+                <a href="/groups/{{groupId}}">
+                    {{groupName}}
+                </a>
+            </h4>
+            <p class="card-text">{{groupDescription}}</p>
+        </div>
+    </div>
+</div>
+<script>
+const cardDivs = document.getElementsByClassName('card');
+cardDivs.map((e) => {
+    e.addEventListener("click", () => {
+        1
+    })
+})
+</script>

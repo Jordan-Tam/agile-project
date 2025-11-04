@@ -145,42 +145,73 @@ router
 	.route("/:id/expense/new")
 
 	.get(requireAuth, async (req, res) => {
-		return res.render("groups/createExpense");
+
+		let group = await groupsData.getGroupByID(req.params.id);
+		console.log(group);
+		return res.render("groups/createExpense", {
+			title: "Create Expense",
+			groupId: req.params.id,
+			group: group
+		});
 	})
 
 	.post(requireAuth, async (req, res) => {
+
+		console.log(req.body);
+
 		// Get path and request body parameters.
 		let groupId = req.params.id;
 		let { name, cost, deadline, payee, payers } = req.body;
 
 		// Input validation.
 		try {
+
 			groupId = checkId(groupId, "Group", "POST /:id/expense/new");
 			name = checkString(name, "Name", "POST /:id/expense/new");
-			cost = checkCost(cost, "POST /:id/expense/new");
+			cost = checkCost(Number(cost), "POST /:id/expense/new");
+			
+			let splitDeadline = deadline.split("-");
+			deadline = `${splitDeadline[1]}/${splitDeadline[2]}/${splitDeadline[0]}`;
+
 			deadline = checkDate(deadline, "Deadline", "POST /:id/expense/new");
 			payee = checkId(payee.toString(), "Payee", "POST /:id/expense/new");
 			for (let payer of payers) {
 				checkId(payer.toString(), "Payer", "POST /:id/expense/new");
 			}
+
 		} catch (e) {
-			return res.status(400).json({ error: e });
+			return res.status(500).render("createExpense", {
+				title: "Create Expense",
+				error: typeof e === "string" ? e : "Unable to add expense",
+				form: {
+					name: req.body?.name ?? "",
+					cost: req.body?.cost ?? "",
+					deadline: req.body?.deadline ?? ""
+				}
+			});
 		}
 
 		// Call data function to add the expense.
 		try {
-			return res.json(
-				await expensesData.createExpense(
-					groupId,
-					name,
-					cost,
-					deadline,
-					payee,
-					payers
-				)
+			await expensesData.createExpense(
+				groupId,
+				name,
+				cost,
+				deadline,
+				payee,
+				payers
 			);
+			res.redirect(`/groups/${groupId}/`);
 		} catch (e) {
-			return res.status(500).json({ error: e });
+			return res.status(500).render("createExpense", {
+				title: "Create Expense",
+				error: typeof e === "string" ? e : "Unable to add expense",
+				form: {
+					name: req.body?.name ?? "",
+					cost: req.body?.cost ?? "",
+					deadline: req.body?.deadline ?? ""
+				}
+			});
 		}
 	});
 

@@ -44,6 +44,8 @@ const exportedMethods = {
 			const insert = await users.insertOne(doc);
 			if (!insert.acknowledged) throw "Unable to register user.";
 
+			return (await this.getUserByUserId(userId));
+
 		} catch (e) {
 			throw e;
 		}

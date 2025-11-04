@@ -1,0 +1,19 @@
+{{> header}}
+<main>
+    {{#if groups}}
+        <div class="container-fluid">
+        {{#each groups}}
+            {{> group-card
+                groupId=_id
+                groupName=groupName
+                groupDescription=groupDescription
+            }}
+        {{/each}}
+        </div>
+    {{else}}
+        <div class="container-fluid">
+            <p>You aren't in any groups! <a href="/groups/new">Create your first group here.</a></p>
+        </div>
+    {{/if}}
+</main>
+{{> bootstrap-js}}

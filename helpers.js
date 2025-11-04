@@ -232,11 +232,11 @@ const checkName = (name, varName, funcName) => {
     name = checkString(name, varName, funcName);
 
 	if (!/^[a-zA-Z]+$/.test(name)) {
-		throw `${fieldName} must contain only letters.`;
+		throw `${varName} must contain only letters.`;
 	}
 
 	if (name.length < 2 || name.length > 20) {
-		throw `${fieldName} must be 2-20 characters.`;
+		throw `${varName} must be 2-20 characters.`;
 	}
 
 	return name;
