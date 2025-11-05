@@ -1,0 +1,133 @@
+<h1>Edit Group</h1>
+
+{{#if error}}
+  <div class="error">{{error}}</div>
+{{/if}}
+
+<form action="/groups/{{group_id}}/edit" method="POST">
+  <div class="form-group">
+    <label for="groupName">Group Name:</label>
+    <input
+      type="text"
+      id="groupName"
+      name="groupName"
+      placeholder="Enter group name"
+      value="{{group_name}}"
+      required
+      minlength="5"
+      maxlength="50"
+    />
+  </div>
+
+  <div class="form-group">
+    <label for="groupDescription">Group Description:</label>
+    <textarea
+      id="groupDescription"
+      name="groupDescription"
+      placeholder="Describe your group"
+      maxlength="20000"
+      required
+    >{{group_description}}</textarea>
+  </div>
+
+  <button type="submit" id="updateBtn">Update Group</button>
+  <a href="/groups/{{group_id}}" id="cancelLink" style="margin-left: 10px;">Cancel</a>
+</form>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="modalClose">&times;</span>
+    <h2 id="modalTitle">Confirm Action</h2>
+    <p id="modalMessage"></p>
+    <div style="margin-top: 20px; text-align: right;">
+      <button id="confirmBtn" class="btn btn-primary" style="margin-right: 10px;">Confirm</button>
+      <button id="modalCancelBtn" class="btn btn-danger">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Store original values when page loads
+  const originalName = document.getElementById('groupName').value;
+  const originalDescription = document.getElementById('groupDescription').value;
+  const form = document.querySelector('form');
+  const cancelLink = document.getElementById('cancelLink');
+  const modal = document.getElementById('confirmModal');
+  const modalMessage = document.getElementById('modalMessage');
+  const confirmBtn = document.getElementById('confirmBtn');
+  const modalCancelBtn = document.getElementById('modalCancelBtn');
+  const modalClose = document.getElementById('modalClose');
+  
+  let pendingAction = null; // Store the action to execute after confirmation
+
+  // Check if form has been modified
+  function hasChanges() {
+    const currentName = document.getElementById('groupName').value;
+    const currentDescription = document.getElementById('groupDescription').value;
+    return currentName !== originalName || currentDescription !== originalDescription;
+  }
+
+  // Show confirmation modal
+  function showConfirmModal(message, onConfirm) {
+    modalMessage.textContent = message;
+    pendingAction = onConfirm;
+    modal.style.display = 'block';
+  }
+
+  // Hide confirmation modal
+  function hideConfirmModal() {
+    modal.style.display = 'none';
+    pendingAction = null;
+  }
+
+  // Handle confirm button click
+  confirmBtn.addEventListener('click', function() {
+    if (pendingAction) {
+      pendingAction();
+    }
+    hideConfirmModal();
+  });
+
+  // Handle modal cancel button click
+  modalCancelBtn.addEventListener('click', function() {
+    hideConfirmModal();
+  });
+
+  // Handle close button click
+  modalClose.addEventListener('click', function() {
+    hideConfirmModal();
+  });
+
+  // Close modal when clicking outside
+  window.addEventListener('click', function(event) {
+    if (event.target === modal) {
+      hideConfirmModal();
+    }
+  });
+
+  // Handle form submission
+  form.addEventListener('submit', function(e) {
+    if (hasChanges()) {
+      e.preventDefault();
+      showConfirmModal('Are you sure you want to confirm the changes?', function() {
+        // User confirmed - submit the form
+        form.submit();
+      });
+    }
+    // If no changes, let form submit normally
+  });
+
+  // Handle cancel link click
+  cancelLink.addEventListener('click', function(e) {
+    if (hasChanges()) {
+      e.preventDefault();
+      showConfirmModal('Are you sure you want to cancel?', function() {
+        // User confirmed - navigate away
+        window.location.href = cancelLink.href;
+      });
+    }
+    // If no changes, let navigation proceed normally
+  });
+</script>
+

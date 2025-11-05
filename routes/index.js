@@ -2,6 +2,7 @@ import registerRoutes from "./register.js";
 import loginRoutes from "./login.js";
 import signoutRoutes from "./signout.js";
 import groupRoutes from "./groups.js";
+import searchRoutes from "./search.js";
 import groupsData from "../data/groups.js";
 import {requireAuth} from "../middleware.js";
 
@@ -39,6 +40,7 @@ const constructorMethod = (app) => {
   app.use("/login", loginRoutes);
   app.use("/signout", signoutRoutes);
   app.use("/groups", groupRoutes);
+  app.use("/search", searchRoutes);
 
   app.use(/(.*)/, (req, res) => {
     res.status(404).json({ error: "Not found" });

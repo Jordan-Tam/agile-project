@@ -171,7 +171,9 @@ async function run() {
 			`Auth tests -> total: ${authSummary.total}, failed: ${authSummary.failed}`
 		);
 		console.log("Groups tests -> see above logs");
+		console.log("Edit Group tests -> see above logs");
 		console.log("Expenses tests -> see above logs");
+		console.log("Search Expenses tests -> see above logs");
 		console.log("Signout tests -> see above logs");
 		console.log("Inline group data tests -> see above logs");
 	} catch (err) {

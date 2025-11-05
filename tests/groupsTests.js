@@ -119,4 +119,94 @@ try {
 			throw err;
 		}
 
+	// TESTS FOR EDIT GROUP (updateGroup)
+	try {
+		// Create a test group first
+		const testGroup = await groupsData.createGroup(
+			"Test Edit Group",
+			"Original description for testing edit"
+		);
+
+		// --- Invalid argument tests ---
+		await chai
+			.expect(groupsData.updateGroup())
+			.to.be.rejectedWith("Group ID is required.");
+		
+		await chai
+			.expect(groupsData.updateGroup(testGroup._id))
+			.to.be.rejectedWith("groupName is required.");
+		
+		await chai
+			.expect(groupsData.updateGroup(testGroup._id, "Updated Name"))
+			.to.be.rejectedWith("groupDescription is required.");
+		
+		await chai
+			.expect(groupsData.updateGroup(123, "Updated Name", "Updated Desc"))
+			.to.be.rejectedWith("Group ID must be a string.");
+		
+		await chai
+			.expect(groupsData.updateGroup("   ", "Updated Name", "Updated Desc"))
+			.to.be.rejectedWith("Group ID cannot be an empty string or just spaces.");
+		
+		await chai
+			.expect(groupsData.updateGroup("invalidId", "Updated Name", "Updated Desc"))
+			.to.be.rejectedWith("Group ID is not a valid ID.");
+		
+		await chai
+			.expect(groupsData.updateGroup(testGroup._id, 123, "Updated Desc"))
+			.to.be.rejectedWith("groupName must be a string.");
+		
+		await chai
+			.expect(groupsData.updateGroup(testGroup._id, "Updated Name", 123))
+			.to.be.rejectedWith("groupDescription must be a string.");
+		
+		await chai
+			.expect(groupsData.updateGroup(testGroup._id, "    ", "Updated Desc"))
+			.to.be.rejectedWith("groupName cannot be empty.");
+		
+		await chai
+			.expect(groupsData.updateGroup(testGroup._id, "Updated Name", "    "))
+			.to.be.rejectedWith("groupDescription cannot be empty.");
+		
+		await chai
+			.expect(groupsData.updateGroup(testGroup._id, "g", "Updated Desc"))
+			.to.be.rejectedWith("Invalid group name length");
+		
+		await chai
+			.expect(groupsData.updateGroup(testGroup._id, "a".repeat(51), "Updated Desc"))
+			.to.be.rejectedWith("Invalid group name length");
+		
+		await chai
+			.expect(groupsData.updateGroup(testGroup._id, "Updated Name", "a".repeat(1001)))
+			.to.be.rejectedWith("Invalid group description length");
+		
+		// Test with non-existent group ID
+		const fakeId = "507f1f77bcf86cd799439011"; // Valid ObjectId format but doesn't exist
+		await chai
+			.expect(groupsData.updateGroup(fakeId, "Updated Name", "Updated Desc"))
+			.to.be.rejectedWith("Error: Group not found");
+
+		// --- Valid update tests ---
+		const updatedGroup = await groupsData.updateGroup(
+			testGroup._id,
+			"Updated Group Name",
+			"Updated group description"
+		);
+
+		chai.assert.strictEqual(updatedGroup.groupName, "Updated Group Name");
+		chai.assert.strictEqual(updatedGroup.groupDescription, "Updated group description");
+		chai.assert.strictEqual(updatedGroup._id, testGroup._id);
+
+		// Verify the update persisted by fetching the group again
+		const fetchedGroup = await groupsData.getGroupByID(testGroup._id);
+		chai.assert.strictEqual(fetchedGroup.groupName, "Updated Group Name");
+		chai.assert.strictEqual(fetchedGroup.groupDescription, "Updated group description");
+
+		console.log("\n=== updateGroup Test Summary ===");
+		console.log("All updateGroup tests passed.");
+	} catch (err) {
+		console.error("updateGroup tests failed:", err);
+		throw err;
+	}
+
 }

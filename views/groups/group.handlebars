@@ -36,6 +36,10 @@
     <form action="/groups/{{group._id}}/removeMember" method="get" style="display:inline;">
         <button type="submit">Remove Member</button>
     </form>
+
+    <form action="/groups/{{group._id}}/edit" method="get" style="display:inline;">
+      <button type="submit">Edit Group</button>
+    </form>
   </div>
   
    {{#if success}}
@@ -103,6 +107,9 @@
             <p><strong>Payers:</strong></p>
             <ul id="modal-payers"></ul>
         </div>
+        <div class="modal-actions">
+            <button id="editExpenseBtn" class="btn btn-primary">Edit Expense</button>
+        </div>
       </div>
   </div>
   {{/if}}
@@ -112,9 +119,11 @@
       const modal = document.getElementById('expenseModal');
       const closeBtn = document.querySelector('.close');
       const viewDetailsBtns = document.querySelectorAll('.view-details-btn');
+      let currentExpenseId = null;
 
       viewDetailsBtns.forEach(btn => {
           btn.addEventListener('click', function() {
+              currentExpenseId = this.getAttribute('data-expense-id');
               const name = this.getAttribute('data-expense-name');
               const cost = this.getAttribute('data-expense-cost');
               const deadline = this.getAttribute('data-expense-deadline');
@@ -136,6 +145,13 @@
 
               modal.style.display = 'block';
           });
+      });
+
+      // Edit expense button handler
+      document.getElementById('editExpenseBtn').addEventListener('click', function() {
+          if (currentExpenseId) {
+              window.location.href = `/groups/{{group_id}}/expense/${currentExpenseId}/edit`;
+          }
       });
 
       closeBtn.addEventListener('click', function() {
