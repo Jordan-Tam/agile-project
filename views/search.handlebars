@@ -78,3 +78,21 @@
     </div>
 </div>
 
+<script>
+    // Auto-submit form when dropdowns change
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form[action="/search"]');
+        const groupFilter = document.getElementById('groupId');
+        const sortFilter = document.getElementById('filterType');
+
+        // Auto-submit when group filter changes
+        groupFilter.addEventListener('change', function() {
+            form.submit();
+        });
+
+        // Auto-submit when sort filter changes
+        sortFilter.addEventListener('change', function() {
+            form.submit();
+        });
+    });
+</script>
