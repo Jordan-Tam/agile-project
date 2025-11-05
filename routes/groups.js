@@ -250,6 +250,16 @@ router
       );
 
       const group = await groupsData.getGroupByID(groupId);
+
+      // Authorization check: verify user is a member of the group
+      const userIsMember = group.groupMembers.some(
+        (member) => member._id.toString() === req.session.user._id.toString()
+      );
+      if (!userIsMember) {
+        return res.status(403).render("error", {
+          error: "You do not have permission to edit expenses in this group.",
+        });
+      }
       const expense = group.expenses?.find(
         (exp) => exp._id.toString() === expenseId
       );
@@ -296,28 +306,35 @@ router
       groupId = checkId(
         groupId,
         "Group",
-        "POST /:groupId/expense/:expenseId/edit"
+        "PUT /:groupId/expense/:expenseId/edit"
       );
       expenseId = checkId(
         expenseId,
         "Expense",
-        "POST /:groupId/expense/:expenseId/edit"
+        "PUT /:groupId/expense/:expenseId/edit"
       );
       name = checkString(
         name,
         "Name",
-        "POST /:groupId/expense/:expenseId/edit"
+        "PUT /:groupId/expense/:expenseId/edit"
       );
-      cost = checkCost(cost, "POST /:groupId/expense/:expenseId/edit");
+      cost = checkCost(cost, "PUT /:groupId/expense/:expenseId/edit");
+
+      // Handle date format conversion if needed
+      if (deadline.includes("-")) {
+        let splitDeadline = deadline.split("-");
+        deadline = `${splitDeadline[1]}/${splitDeadline[2]}/${splitDeadline[0]}`;
+      }
+
       deadline = checkDate(
         deadline,
         "Deadline",
-        "POST /:groupId/expense/:expenseId/edit"
+        "PUT /:groupId/expense/:expenseId/edit"
       );
       payee = checkId(
         payee.toString(),
         "Payee",
-        "POST /:groupId/expense/:expenseId/edit"
+        "PUT /:groupId/expense/:expenseId/edit"
       );
       // Ensure payers is provided and is an array
       if (!payers || (Array.isArray(payers) && payers.length === 0)) {
@@ -330,11 +347,26 @@ router
         checkId(
           payer.toString(),
           "Payer",
-          "POST /:groupId/expense/:expenseId/edit"
+          "PUT /:groupId/expense/:expenseId/edit"
         );
       }
     } catch (e) {
       return res.status(400).json({ error: e });
+    }
+
+    // Authorization check: verify user is a member of the group
+    try {
+      const group = await groupsData.getGroupByID(groupId);
+      const userIsMember = group.groupMembers.some(
+        (member) => member._id.toString() === req.session.user._id.toString()
+      );
+      if (!userIsMember) {
+        return res.status(403).json({
+          error: "You do not have permission to edit expenses in this group.",
+        });
+      }
+    } catch (e) {
+      return res.status(500).json({ error: e.toString() });
     }
 
     // Call data function to edit the expense.

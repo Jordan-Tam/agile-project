@@ -32,6 +32,16 @@ app.engine(
 			contains: function (array, value) {
 				if (!Array.isArray(array)) return false;
 				return array.some(item => item.toString() === value.toString());
+			},
+			formatDateForInput: function (dateString) {
+				// Convert MM/DD/YYYY to YYYY-MM-DD for HTML5 date input
+				if (!dateString) return "";
+				const parts = dateString.split("/");
+				if (parts.length === 3) {
+					const [month, day, year] = parts;
+					return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+				}
+				return dateString;
 			}
 		}
 	})

@@ -13,8 +13,8 @@
         </div>
         
         <div class="form-group">
-            <label for="deadline">Deadline (MM/DD/YYYY):</label>
-            <input type="text" id="deadline" name="deadline" value="{{expense.deadline}}" required>
+            <label for="deadline">Deadline:</label>
+            <input type="date" id="deadline" name="deadline" value="{{formatDateForInput expense.deadline}}" required>
         </div>
         
         <div class="form-group">

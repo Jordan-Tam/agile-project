@@ -135,7 +135,7 @@ const exportedMethods = {
       }
     }
 
-    // Get Expnse to verfy it exists
+    // Get Expense to verify it exists
     const expenses = groupDoc.expenses;
     const expenseIndex = expenses.findIndex(
       (exp) => exp._id.toString() === expenseId
@@ -162,7 +162,7 @@ const exportedMethods = {
 
     if (!updateResult) throw "Error: Failed to update expense.";
 
-    // Fetch and return the updated expense, avoid returnign whole group everytime
+    // Fetch and return the updated expense, avoid returning whole group every time
     const updatedExpense = updateResult.expenses.find(
       (exp) => exp._id.toString() === expenseId
     );
