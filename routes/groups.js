@@ -87,6 +87,80 @@ router
     }
   });
 
+// Edit group route - MUST come before /:id route to avoid conflicts
+router
+	.route("/:id/edit")
+
+	// GET route - display the "edit group" form
+	.get(requireAuth, async (req, res) => {
+		try {
+			const id = checkId(req.params.id);
+			const group = await groupsData.getGroupByID(id);
+			res.render("groups/editGroup", {
+				title: "Edit Group",
+				group: group,
+				group_id: id,
+				group_name: group.groupName,
+				group_description: group.groupDescription
+			});
+		} catch (e) {
+			res.status(404).render("error", { error: e.toString() });
+		}
+	})
+
+	// POST route - handle form submission
+	.post(requireAuth, async (req, res) => {
+		try {
+			let groupId = req.params.id;
+			let { groupName, groupDescription } = req.body;
+
+			if (!groupName || !groupDescription) {
+				const group = await groupsData.getGroupByID(groupId);
+				return res.status(400).render("groups/editGroup", {
+					title: "Edit Group",
+					group: group,
+					group_id: groupId,
+					group_name: group.groupName,
+					group_description: group.groupDescription,
+					error: "Both group name and description are required."
+				});
+			}
+
+			const updatedGroup = await groupsData.updateGroup(
+				groupId,
+				groupName,
+				groupDescription
+			);
+			const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
+
+			res.render("groups/group", {
+				title: "Group Updated",
+				group: updatedGroup,
+				group_id: groupId,
+				group_name: updatedGroup.groupName,
+				group_description: updatedGroup.groupDescription,
+				groupMembers: updatedGroup.groupMembers,
+				groups: allGroups,
+				success: "Group updated successfully!"
+			});
+		} catch (e) {
+			try {
+				const groupId = checkId(req.params.id);
+				const group = await groupsData.getGroupByID(groupId);
+				return res.status(400).render("groups/editGroup", {
+					title: "Edit Group",
+					group: group,
+					group_id: groupId,
+					group_name: group.groupName,
+					group_description: group.groupDescription,
+					error: e.toString()
+				});
+			} catch (err) {
+				return res.status(400).render("error", { error: e.toString() });
+			}
+		}
+	});
+
 router.route("/:id").get(requireAuth, async (req, res) => {
   try {
     const id = checkId(req.params.id);

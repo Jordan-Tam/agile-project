@@ -101,6 +101,43 @@ const exportedMethods = {
 		return this.getGroupByID(insertInfo.insertedId.toString());
 	},
 
+	// Update an existing group
+	async updateGroup(groupId, groupName, groupDescription) {
+		groupId = checkId(groupId, "Group", "updateGroup");
+		groupName = checkString(groupName, "groupName", "updateGroup");
+		if (groupName.length < 5 || groupName.length > 50) {
+			throw "Invalid group name length";
+		}
+
+		groupDescription = checkString(groupDescription, "groupDescription", "updateGroup");
+		if (groupDescription.length > 1000) {
+			throw "Invalid group description length";
+		}
+
+		const groupCollection = await groups();
+		const groupObjectId = new ObjectId(groupId);
+
+		// Check if group exists
+		const existingGroup = await groupCollection.findOne({ _id: groupObjectId });
+		if (!existingGroup) {
+			throw "Error: Group not found";
+		}
+
+		// Update the group
+		const updateResult = await groupCollection.findOneAndUpdate(
+			{ _id: groupObjectId },
+			{ $set: { groupName, groupDescription } },
+			{ returnDocument: "after" }
+		);
+
+		if (!updateResult) {
+			throw "Error: Failed to update group";
+		}
+
+		// Return the updated group using getGroupByID to ensure proper formatting
+		return this.getGroupByID(groupId);
+	},
+
 	// Add a member to a group
 	async addMember(groupId, /*  first_name, last_name, */ user_id) {
 		groupId = checkId(groupId);

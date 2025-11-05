@@ -2,13 +2,11 @@ import express from "express";
 import session from "express-session";
 import exphbs from "express-handlebars";
 import configRoutes from "./routes/index.js";
-
 const app = express();
 app.use(express.json());
 app.use("/public", express.static("public"));
 app.use("/static", express.static("static"));
 app.use(express.urlencoded({ extended: true }));
-
 app.use(
 	session({
 		name: "AuthenticationState",
@@ -17,7 +15,6 @@ app.use(
 		saveUninitialized: false
 	})
 );
-
 app.engine(
 	"handlebars",
 	exphbs.engine({
@@ -42,13 +39,15 @@ app.engine(
 					return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 				}
 				return dateString;
+			},
+			ifEquals: function (arg1, arg2, options) {
+				return (arg1 === arg2) ? options.fn(this) : options.inverse(this);
 			}
 		}
 	})
 );
 app.set("view engine", "handlebars");
 configRoutes(app);
-
 // Start the server
 app.listen(3000, () => {
 	console.log("We've now got a server!");
