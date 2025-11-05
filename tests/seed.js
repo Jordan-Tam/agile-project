@@ -38,27 +38,27 @@ export async function seed() {
     //! ADD USERS TO GROUPS
     await groupsData.addMember(
         ROOMMATES._id,
-        JOHN_DOE._id
+        JOHN_DOE.userId
     );
 
     await groupsData.addMember(
         VIDEO_GAME_CLUB._id,
-        JOHN_DOE._id
+        JOHN_DOE.userId
     );
 
     await groupsData.addMember(
         ROOMMATES._id,
-        JANE_SMITH._id
+        JANE_SMITH.userId
     );
 
     await groupsData.addMember(
         ROOMMATES._id,
-        DOUG_THE_DOG._id
+        DOUG_THE_DOG.userId
     );
 
     await groupsData.addMember(
         ROOMMATES._id,
-        DORIS_VANDERBILT._id
+        DORIS_VANDERBILT.userId
     );
 
     //! CREATE EXPENSES

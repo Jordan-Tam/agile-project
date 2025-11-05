@@ -55,6 +55,8 @@ router.post("/", async (req, res) => {
 	} catch (err) {
 		return res.status(400).render("login", {
 			title: "Login",
+			hide: true,
+			disable_brand: true,
 			error: typeof err === "string" ? err : "Unable to login.",
 			form: {
 				userId: req.body?.userId ?? ""

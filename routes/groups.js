@@ -52,7 +52,8 @@ router
 				group_name: newGroup.groupName,
 				group_description: newGroup.groupDescription,
 				groups: allGroups,
-				success: "Group created successfully!"
+				success: "Group created successfully!",
+				stylesheet: "/public/css/styles.css"
 			});
 		} catch (e) {
 			res.status(400).render("groups/createGroup", {
@@ -131,7 +132,8 @@ router.route("/:id").get(requireAuth, async (req, res) => {
 			groupMembers: group.groupMembers,
 			groups: allGroups,
 			expenses: formattedExpenses,
-			hasExpenses: formattedExpenses.length > 0
+			hasExpenses: formattedExpenses.length > 0,
+			stylesheet: "/public/css/styles.css"
 		});
 	} catch (e) {
 		return res.status(404).render("error", {
@@ -241,8 +243,8 @@ router
 		// Input validation
 		try {
 			groupId = checkId(groupId, "Group ID", "POST /:id/addMember");
-			first_name = checkString(first_name, "First Name", "POST /:id/addMember");
-			last_name = checkString(last_name, "Last Name", "POST /:id/addMember");
+			/* first_name = checkString(first_name, "First Name", "POST /:id/addMember");
+			last_name = checkString(last_name, "Last Name", "POST /:id/addMember"); */
 			user_id = checkUserId(user_id, "User ID", "POST /:id/addMember");
 		} catch (e) {
 			return res.status(400).render("groups/addMember", {
@@ -255,8 +257,8 @@ router
 		try {
 			const updatedGroup = await groupsData.addMember(
 				groupId,
-				first_name,
-				last_name,
+				/* first_name,
+				last_name, */
 				user_id
 			);
 			const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
@@ -266,7 +268,8 @@ router
 				group_description: updatedGroup.groupDescription,
 				groupMembers: updatedGroup.groupMembers,
 				groups: allGroups,
-				success: "Member added successfully!"
+				success: "Member added successfully!",
+				stylesheet: "/public/css/styles.css"
 			});
 		} catch (e) {
 			res.status(400).render("groups/addMember", {
@@ -325,6 +328,7 @@ router
         const updatedGroup = await groupsData.removeMember(groupId, user_id);
         const allGroups = await groupsData.getAllGroups();
 
+		console.log(updatedGroup);
         res.render("groups/group", {
             title: "Member Removed",
             group: updatedGroup,
@@ -332,7 +336,8 @@ router
             group_description: updatedGroup.groupDescription,
             groupMembers: updatedGroup.groupMembers,
             groups: allGroups,
-            success: "Member removed successfully!"
+            success: "Member removed successfully!",
+			stylesheet: "/public/css/styles.css"
         });
     } catch (e) {
         return res.status(400).render("groups/removeMember", {
@@ -350,7 +355,8 @@ router.route("/").get(requireAuth, async (req, res) => {
 		res.render("groups/group", {
 			title: "Your Groups",
 			groups: allGroups,
-			user: req.session.user
+			user: req.session.user,
+			stylesheet: "/public/css/styles.css"
 		});
 	} catch (e) {
 		res.status(500).render("error", { error: e.toString() });

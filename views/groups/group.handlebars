@@ -1,7 +1,7 @@
 {{> header}}
 <div class="group-container">
 
-  {{#if groups}}
+{{!--   {{#if groups}}
     <h2>All Groups</h2>
     <ul>
       {{#each groups}}
@@ -17,10 +17,10 @@
     {{#unless group}}
       <p>No groups yet. Create your first group!</p>
     {{/unless}}
-  {{/if}}
+  {{/if}} --}}
 
   {{#if group}}
-    <hr>
+    {{!-- <hr> --}}
     <h1>{{group_name}}</h1>
     <p>{{group_description}}</p>
 
@@ -47,7 +47,8 @@
   {{/if}}
 
     {{#if groupMembers}}
-      <h2>Group Members</h2>
+      <br>
+      <h3>Group Members</h3>
       <ul>
         {{#each groupMembers}}
           <li>{{this.firstName}} {{this.lastName}}</li>
@@ -55,7 +56,7 @@
       </ul>
     {{/if}}
 
-    <h2>Expenses</h2>
+    <h3>Expenses</h3>
       {{#if hasExpenses}}
           <div class="expenses-list">
               {{#each expenses}}
@@ -181,4 +182,3 @@
       });
   </script>
 </div>
-{{> bootstrap-js}}

@@ -1,34 +1,40 @@
-<h1>Add Member to {{group.groupName}}</h1>
-<p>{{group.groupDescription}}</p>
+{{> header}}
 
-<form action="/groups/{{group._id}}/addMember" method="post" class="add-member-form">
-  <div>
-    <label for="first_name">First Name:</label>
-    <input type="text" id="first_name" name="first_name" required>
-  </div>
+<div class="container-fluid">
 
-  <div>
-    <label for="last_name">Last Name:</label>
-    <input type="text" id="last_name" name="last_name" required>
-  </div>
+	<form action="/groups/{{group._id}}" method="get" {{!-- style="margin-top: 10px;" --}}>
+		<button type="submit" class="btn btn-primary">
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+				<path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+			</svg>
+		</button>
+	</form>
 
-  <div>
-    <label for="user_id">User ID:</label>
-    <input type="text" id="user_id" name="user_id" required>
-  </div>
+	<h1>Add Member to {{group.groupName}}</h1>
 
-  <button type="submit">Add Member</button>
-</form>
+	<p>{{group.groupDescription}}</p>
 
-<form action="/groups/{{group._id}}" method="get" style="margin-top: 10px;">
-  <button type="submit">Back to Group</button>
-</form>
+	{{#if error}}
+		<p class="error">{{error}}</p>
+	{{/if}}
 
-{{#if error}}
-  <p class="error">{{error}}</p>
-{{/if}}
+	{{#if success}}
+		<p class="success">{{success}}</p>
+	{{/if}}
 
-{{#if success}}
-  <p class="success">{{success}}</p>
-  
-{{/if}}
+	<form method="POST" action="/groups/{{group._id}}/addMember" class="add-member-form">
+		<div class="custom-card form-floating mb-3">
+			<input
+				class="form-control"
+				placeholder="User ID goes here"
+				id="user_id"
+				name="user_id"
+				required
+			/>
+			<label for="user_id">User ID</label>
+		</div>
+		<button type="submit" class="btn btn-primary">Add Member</button>
+	</form>
+
+</div>
+{{> custom-card-script initial_width_num=3}}

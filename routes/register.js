@@ -52,7 +52,9 @@ router.post("/", async (req, res) => {
 	} catch (err) {
 		console.log(err);
 		return res.status(400).render("register", {
-			title: "Create your account",
+			title: "Register",
+			hide: true,
+			disable_brand: true,
 			error: typeof err === "string" ? err : "Unable to register user.",
 			form: {
 				firstName: req.body?.firstName ?? "",

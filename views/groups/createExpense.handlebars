@@ -2,7 +2,7 @@
 
 <div class="container-fluid">
 
-    <h1 class="mb-3">Add Expense</h1>
+    <h1 class="mb-3">Create Expense for <span style="font-weight: bold;">{{group.groupName}}</span></h1>
 
 	{{#if error}}
 		<div class="error-message">
@@ -11,7 +11,7 @@
 	{{/if}}
 
     <form method="POST" action="/groups/{{groupId}}/expense/new" id="login-form">
-        <div class="form-floating w-25 mb-3">
+        <div class="custom-card form-floating mb-3">
             <input
                 class="form-control"
                 placeholder="Name goes here"
@@ -22,11 +22,13 @@
             />
             <label for="name">Name</label>
         </div>
-        <div class="form-floating w-25 mb-3">
+        <div class="custom-card form-floating mb-3">
             <input
                 class="form-control"
                 placeholder="Cost goes here"
                 type="number"
+                min="0"
+                step="0.01"
                 id="cost"
                 name="cost"
                 value="{{form.cost}}"
@@ -34,7 +36,7 @@
             />
             <label for="cost">Cost</label>
         </div>
-        <div class="form-floating w-25 mb-3">
+        <div class="custom-card form-floating mb-3">
             <input
                 class="form-control"
                 placeholder="Deadline goes here"
@@ -63,5 +65,4 @@
         <button type="submit" class="btn btn-primary">Add Expense</button>
     </form>
 </div>
-
-{{> bootstrap-js}}
+{{> custom-card-script initial_width_num=3}}

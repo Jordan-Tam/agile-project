@@ -106,7 +106,7 @@ const exportedMethods = {
 		groupId = checkId(groupId);
 		//first_name = checkString(first_name);
 		//last_name = checkString(last_name);
-		user_id = checkId(user_id);
+		user_id = checkUserId(user_id);
 
 		// Find the user from users data
 		const userList = await user.getAllUsers(); // returns array
@@ -114,7 +114,7 @@ const exportedMethods = {
 			(u) =>
 				/* u.firstName === first_name &&
 				u.lastName === last_name && */
-				u._id.toString() === user_id
+				u.userId.toString() === user_id
 		);
 
 		if (!theUser) throw "No user found with these credentials";
