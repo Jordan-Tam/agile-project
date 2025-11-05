@@ -246,8 +246,7 @@ router
 			user_id = checkUserId(user_id, "User ID", "POST /:id/addMember");
 		} catch (e) {
 			return res.status(400).render("groups/addMember", {
-				title: "Add Member",
-				error: e.toString()
+				title: "Add Member"
 			});
 		}
 
@@ -324,16 +323,7 @@ router
     try {
         const updatedGroup = await groupsData.removeMember(groupId, user_id);
         const allGroups = await groupsData.getAllGroups();
-
-        res.render("groups/group", {
-            title: "Member Removed",
-            group: updatedGroup,
-            group_name: updatedGroup.groupName,
-            group_description: updatedGroup.groupDescription,
-            groupMembers: updatedGroup.groupMembers,
-            groups: allGroups,
-            success: "Member removed successfully!"
-        });
+		res.redirect(`/groups/${groupId}/`);
     } catch (e) {
         return res.status(400).render("groups/removeMember", {
             title: "Remove Member",
