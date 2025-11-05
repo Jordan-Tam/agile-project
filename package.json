@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "test": "node tests/mainTests.js"
+    "test": "node tests/mainTests.js",
+    "seed": "node tests/seed.js"
   },
   "dependencies": {
     "axios": "^1.12.2",

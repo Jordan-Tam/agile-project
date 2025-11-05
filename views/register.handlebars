@@ -1,30 +1,69 @@
-<h1>Create your account</h1>
+{{> header hide=hide disable_brand=disable_brand}}
+<div class="container-fluid">
+	<h1 class="mb-3">{{title}}</h1>
+	
+	{{#if error}}
+		<div class="error">{{error}}</div>
+	{{/if}}
 
-{{#if error}}<div class="error">{{error}}</div>{{/if}}
+	<form method="POST" action="/register" novalidate>
+		<div class="form-floating w-25 mb-3">
+			<input
+				class="form-control"
+				placeholder="First name goes here"
+				id="firstName"
+				name="firstName"
+				value="{{form.firstName}}"
+				required
+			/>
+			<label for="firstName">First Name</label>
+		</div>
+		<div class="form-floating w-25 mb-3">
+			<input
+				class="form-control"
+				placeholder="Last name goes here"
+				id="lastName"
+				name="lastName"
+				value="{{form.lastName}}"
+				required
+			/>
+			<label for="lastName">Last Name</label>
+		</div>
+		<div class="form-floating w-25 mb-3">
+			<input
+				class="form-control"
+				placeholder="User ID goes here"
+				id="userId"
+				name="userId"
+				value="{{form.userId}}"
+				required
+			/>
+			<label for="userId">User ID</label>
+		</div>
+		<div class="form-floating w-25 mb-3">
+			<input
+				class="form-control"
+				placeholder="Password goes here"
+				type="password"
+				id="password"
+				name="password"
+				required
+			/>
+			<label for="password">Password</label>
+		</div>
+		<div class="form-floating w-25 mb-3">
+			<input
+				class="form-control"
+				placeholder="Confirm Password goes here"
+				type="password"
+				id="confirmPassword"
+				name="confirmPassword"
+				required
+			/>
+			<label for="confirmPassword">Confirm Password</label>
+		</div>
+		<button type="submit" class="btn btn-primary">Create account</button>
+	</form>
+	<p>Already have an account? <a href="/login">Sign in</a></p>
+</div>
 
-<form method="POST" action="/register" novalidate>
-  <label>First name
-    <input name="firstName" value="{{form.firstName}}" required>
-  </label>
-
-  <label>Last name
-    <input name="lastName" value="{{form.lastName}}" required>
-  </label>
-
-  <label>User ID
-    <input name="userId" value="{{form.userId}}" required>
-    <small>5–10 chars; letters and numbers only</small>
-  </label>
-
-  <label>Password
-    <input type="password" name="password" required>
-  </label>
-
-  <label>Confirm Password
-    <input type="password" name="confirmPassword" required>
-  </label>
-
-  <button type="submit">Create account</button>
-</form>
-
-<p>Already have an account? <a href="/login">Sign in</a></p>

@@ -145,7 +145,16 @@ router
   .route("/:id/expense/new")
 
   .get(requireAuth, async (req, res) => {
-    return res.render("groups/createExpense");
+    try {
+      let group = await groupsData.getGroupByID(req.params.id);
+      return res.render("groups/createExpense", {
+        title: "Create Expense",
+        groupId: req.params.id,
+        group: group
+      });
+    } catch (e) {
+      return res.status(500).render("error", { error: e.toString() });
+    }
   })
 
   .post(requireAuth, async (req, res) => {
@@ -157,30 +166,70 @@ router
     try {
       groupId = checkId(groupId, "Group", "POST /:id/expense/new");
       name = checkString(name, "Name", "POST /:id/expense/new");
-      cost = checkCost(cost, "POST /:id/expense/new");
+      cost = checkCost(Number(cost), "POST /:id/expense/new");
+      
+      // Handle date format conversion if needed
+      if (deadline.includes("-")) {
+        let splitDeadline = deadline.split("-");
+        deadline = `${splitDeadline[1]}/${splitDeadline[2]}/${splitDeadline[0]}`;
+      }
+
       deadline = checkDate(deadline, "Deadline", "POST /:id/expense/new");
       payee = checkId(payee.toString(), "Payee", "POST /:id/expense/new");
       for (let payer of payers) {
         checkId(payer.toString(), "Payer", "POST /:id/expense/new");
       }
     } catch (e) {
-      return res.status(400).json({ error: e });
+      let group;
+      try {
+        group = await groupsData.getGroupByID(groupId);
+      } catch (groupError) {
+        group = null;
+      }
+      
+      return res.status(500).render("groups/createExpense", {
+        title: "Create Expense",
+        groupId: groupId,
+        group: group,
+        error: typeof e === "string" ? e : "Unable to add expense",
+        form: {
+          name: req.body?.name ?? "",
+          cost: req.body?.cost ?? "",
+          deadline: req.body?.deadline ?? ""
+        }
+      });
     }
 
     // Call data function to add the expense.
     try {
-      return res.json(
-        await expensesData.createExpense(
-          groupId,
-          name,
-          cost,
-          deadline,
-          payee,
-          payers
-        )
+      await expensesData.createExpense(
+        groupId,
+        name,
+        cost,
+        deadline,
+        payee,
+        payers
       );
+      res.redirect(`/groups/${groupId}/`);
     } catch (e) {
-      return res.status(500).json({ error: e });
+      let group;
+      try {
+        group = await groupsData.getGroupByID(groupId);
+      } catch (groupError) {
+        group = null;
+      }
+
+      return res.status(500).render("groups/createExpense", {
+        title: "Create Expense",
+        groupId: groupId,
+        group: group,
+        error: typeof e === "string" ? e : "Unable to add expense",
+        form: {
+          name: req.body?.name ?? "",
+          cost: req.body?.cost ?? "",
+          deadline: req.body?.deadline ?? ""
+        }
+      });
     }
   });
 

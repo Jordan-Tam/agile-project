@@ -10,7 +10,11 @@ const router = Router();
 
 /* routes */
 router.get("/", redirectIfLoggedIn, (req, res) => {
-	res.status(200).render("login", { title: "Login" });
+	res.status(200).render("login", {
+		title: "Login",
+		hide: true,
+		disable_brand: true
+	});
 });
 
 router.post("/", async (req, res) => {
@@ -46,7 +50,8 @@ router.post("/", async (req, res) => {
 		};
 
 		// Redirect to groups page or home
-		return res.redirect("/groups");
+		return res.redirect("/home");
+
 	} catch (err) {
 		return res.status(400).render("login", {
 			title: "Login",
