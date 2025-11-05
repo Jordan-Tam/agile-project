@@ -156,6 +156,141 @@ export async function runExpenseTests() {
 		(await expensesData.getAllExpenses(group_1._id.toString())).length === 1
 	);
 
+	// TESTS FOR EDITING AN EXPENSE
+	// Test missing/invalid parameters
+	try {
+		await expensesData.editExpense();
+	} catch (e) {
+		assert(e === "Group ID is required.");
+	}
+
+	try {
+		await expensesData.editExpense(group_1._id.toString());
+	} catch (e) {
+		assert(e === "Expense ID is required.");
+	}
+
+	try {
+		await expensesData.editExpense(
+			group_1._id.toString(),
+			expense_2._id.toString()
+		);
+	} catch (e) {
+		assert(e === "Name is required.");
+	}
+
+	try {
+		await expensesData.editExpense(
+			group_1._id.toString(),
+			expense_2._id.toString(),
+			"Updated Lunch",
+			"not a number"
+		);
+	} catch (e) {
+		assert(e === "Cost must be a number.");
+	}
+
+	try {
+		await expensesData.editExpense(
+			group_1._id.toString(),
+			expense_2._id.toString(),
+			"Updated Lunch",
+			150.999
+		);
+	} catch (e) {
+		assert(e === "Cost should be a number with up to 2 decimal places.");
+	}
+
+	try {
+		await expensesData.editExpense(
+			group_1._id.toString(),
+			expense_2._id.toString(),
+			"Updated Lunch",
+			150.99,
+			"13/45/2025"
+		);
+	} catch (e) {
+		assert(e === "Deadline is an invalid date.");
+	}
+
+	try {
+		await expensesData.editExpense(
+			group_1._id.toString(),
+			expense_2._id.toString(),
+			"Updated Lunch",
+			150.99,
+			"02/15/2026",
+			"invalidid"
+		);
+	} catch (e) {
+		assert(e === "Payee ID is not a valid ID.");
+	}
+
+	// Test non-existent group
+	try {
+		await expensesData.editExpense(
+			"69038ebc14a7768bd27fbda0",
+			expense_2._id.toString(),
+			"Updated Lunch",
+			150.99,
+			"02/15/2026",
+			usersList[1]._id.toString(),
+			[usersList[2]._id.toString()]
+		);
+	} catch (e) {
+		assert(e === "Error: Group not found");
+	}
+
+	// Test non-existent expense
+	try {
+		await expensesData.editExpense(
+			group_1._id.toString(),
+			"69038ebc14a7768bd27fbda0",
+			"Updated Lunch",
+			150.99,
+			"02/15/2026",
+			usersList[1]._id.toString(),
+			[usersList[2]._id.toString()]
+		);
+	} catch (e) {
+		assert(
+			e.includes("not found in group")
+		);
+	}
+
+	// Test payee not in group (assuming we have a user not in the group)
+	// For this test, we'd need to create a user not in the group
+	// Skipping for now as all seeded users are in the group
+
+	// Test successful edit
+	const updatedExpense = await expensesData.editExpense(
+		group_1._id.toString(),
+		expense_2._id.toString(),
+		"Updated Lunch",
+		150.99,
+		"02/15/2026",
+		usersList[1]._id.toString(),
+		[usersList[0]._id.toString(), usersList[2]._id.toString()]
+	);
+
+	assert.strictEqual(updatedExpense.name, "Updated Lunch");
+	assert.strictEqual(updatedExpense.cost, 150.99);
+	assert.strictEqual(updatedExpense.deadline, "02/15/2026");
+	assert.strictEqual(updatedExpense.payee, usersList[1]._id.toString());
+	assert.deepStrictEqual(updatedExpense.payers, [
+		usersList[0]._id.toString(),
+		usersList[2]._id.toString()
+	]);
+
+	// Verify the expense was actually updated in the database
+	const allExpenses = await expensesData.getAllExpenses(group_1._id.toString());
+	const foundExpense = allExpenses.find(
+		(exp) => exp._id.toString() === expense_2._id.toString()
+	);
+	assert.strictEqual(foundExpense.name, "Updated Lunch");
+	assert.strictEqual(foundExpense.cost, 150.99);
+	assert.strictEqual(foundExpense.deadline, "02/15/2026");
+
 	console.log("All expense tests passed.");
 
 	// TESTS FOR SEARCH EXPENSES

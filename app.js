@@ -2,13 +2,11 @@ import express from "express";
 import session from "express-session";
 import exphbs from "express-handlebars";
 import configRoutes from "./routes/index.js";
-
 const app = express();
 app.use(express.json());
 app.use("/public", express.static("public"));
 app.use("/static", express.static("static"));
 app.use(express.urlencoded({ extended: true }));
-
 app.use(
 	session({
 		name: "AuthenticationState",
@@ -17,7 +15,6 @@ app.use(
 		saveUninitialized: false
 	})
 );
-
 app.engine(
 	"handlebars",
 	exphbs.engine({
@@ -29,6 +26,20 @@ app.engine(
 			eq: function (a, b) {
 				return a === b;
 			},
+			contains: function (array, value) {
+				if (!Array.isArray(array)) return false;
+				return array.some(item => item.toString() === value.toString());
+			},
+			formatDateForInput: function (dateString) {
+				// Convert MM/DD/YYYY to YYYY-MM-DD for HTML5 date input
+				if (!dateString) return "";
+				const parts = dateString.split("/");
+				if (parts.length === 3) {
+					const [month, day, year] = parts;
+					return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+				}
+				return dateString;
+			},
 			ifEquals: function (arg1, arg2, options) {
 				return (arg1 === arg2) ? options.fn(this) : options.inverse(this);
 			}
@@ -37,7 +48,6 @@ app.engine(
 );
 app.set("view engine", "handlebars");
 configRoutes(app);
-
 // Start the server
 app.listen(3000, () => {
 	console.log("We've now got a server!");
