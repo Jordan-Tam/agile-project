@@ -25,6 +25,13 @@ app.engine(
 		helpers: {
 			json: function (context) {
 				return JSON.stringify(context);
+			},
+			eq: function (a, b) {
+				return a === b;
+			},
+			contains: function (array, value) {
+				if (!Array.isArray(array)) return false;
+				return array.some(item => item.toString() === value.toString());
 			}
 		}
 	})

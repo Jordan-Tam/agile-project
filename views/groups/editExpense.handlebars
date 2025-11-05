@@ -1,0 +1,91 @@
+<div class="expense-form-container">
+    <h1>Edit Expense</h1>
+    
+    <form id="editExpenseForm" method="POST" action="/groups/{{groupId}}/expense/{{expense._id}}/edit?_method=PUT">
+        <div class="form-group">
+            <label for="name">Expense Name:</label>
+            <input type="text" id="name" name="name" value="{{expense.name}}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="cost">Cost:</label>
+            <input type="number" id="cost" name="cost" value="{{expense.cost}}" step="0.01" min="0" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="deadline">Deadline (MM/DD/YYYY):</label>
+            <input type="text" id="deadline" name="deadline" value="{{expense.deadline}}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="payee">Payee (who paid):</label>
+            <select id="payee" name="payee" required>
+                {{#each groupMembers}}
+                    <option value="{{this._id}}" {{#if (eq this._id ../expense.payee)}}selected{{/if}}>
+                        {{this.firstName}} {{this.lastName}}
+                    </option>
+                {{/each}}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Payers (who owes):</label>
+            {{#each groupMembers}}
+                <div class="checkbox-group">
+                    <input type="checkbox" 
+                           id="payer-{{this._id}}" 
+                           name="payers" 
+                           value="{{this._id}}"
+                           {{#if (contains ../expense.payers this._id)}}checked{{/if}}>
+                    <label for="payer-{{this._id}}">{{this.firstName}} {{this.lastName}}</label>
+                </div>
+            {{/each}}
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Update Expense</button>
+            <a href="/groups/{{groupId}}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+    
+    <div id="error-message" class="error" style="display: none;"></div>
+</div>
+
+<script>
+    // Handle form submission
+    document.getElementById('editExpenseForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const payers = formData.getAll('payers');
+        
+        const data = {
+            name: formData.get('name'),
+            cost: parseFloat(formData.get('cost')),
+            deadline: formData.get('deadline'),
+            payee: formData.get('payee'),
+            payers: payers
+        };
+        
+        try {
+            const response = await fetch(this.action, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                window.location.href = '/groups/{{groupId}}';
+            } else {
+                const error = await response.json();
+                document.getElementById('error-message').textContent = error.error || 'Error updating expense';
+                document.getElementById('error-message').style.display = 'block';
+            }
+        } catch (error) {
+            document.getElementById('error-message').textContent = 'Error: ' + error.message;
+            document.getElementById('error-message').style.display = 'block';
+        }
+    });
+</script>

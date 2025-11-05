@@ -5,293 +5,439 @@ import expensesData from "../data/expenses.js";
 import usersData from "../data/users.js";
 import { requireAuth } from "../middleware.js";
 import {
-	checkString,
-	checkId,
-	checkNumber,
-	checkDate,
-	checkName,
-	checkUserId,
-	checkPassword,
-	checkCost
+  checkString,
+  checkId,
+  checkNumber,
+  checkDate,
+  checkName,
+  checkUserId,
+  checkPassword,
+  checkCost,
 } from "../helpers.js";
 const router = express.Router();
 
 router
-	.route("/new")
+  .route("/new")
 
-	// GET route - display the "create group" form
-	.get(requireAuth, async (req, res) => {
-		try {
-			res.render("groups/createGroup", { title: "Create a Group" });
-		} catch (e) {
-			res.status(500).render("error", { error: e });
-		}
-	})
+  // GET route - display the "create group" form
+  .get(requireAuth, async (req, res) => {
+    try {
+      res.render("groups/createGroup", { title: "Create a Group" });
+    } catch (e) {
+      res.status(500).render("error", { error: e });
+    }
+  })
 
-	// POST route - handle form submission
-	.post(requireAuth, async (req, res) => {
-		try {
-			let { groupName, groupDescription } = req.body;
+  // POST route - handle form submission
+  .post(requireAuth, async (req, res) => {
+    try {
+      let { groupName, groupDescription } = req.body;
 
-			if (!groupName || !groupDescription) {
-				return res.status(400).render("groups/createGroup", {
-					title: "Create a Group",
-					error: "Both group name and description are required."
-				});
-			}
+      if (!groupName || !groupDescription) {
+        return res.status(400).render("groups/createGroup", {
+          title: "Create a Group",
+          error: "Both group name and description are required.",
+        });
+      }
 
-			const newGroup = await groupsData.createGroup(
-				groupName,
-				groupDescription
-			);
-			const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
+      const newGroup = await groupsData.createGroup(
+        groupName,
+        groupDescription
+      );
+      const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
 
-			res.render("groups/group", {
-				title: "Group Created",
-				group: newGroup,
-				group_name: newGroup.groupName,
-				group_description: newGroup.groupDescription,
-				groups: allGroups,
-				success: "Group created successfully!"
-			});
-		} catch (e) {
-			res.status(400).render("groups/createGroup", {
-				title: "Create a Group",
-				error: e.toString()
-			});
-		}
-	});
+      res.render("groups/group", {
+        title: "Group Created",
+        group: newGroup,
+        group_name: newGroup.groupName,
+        group_description: newGroup.groupDescription,
+        groups: allGroups,
+        success: "Group created successfully!",
+      });
+    } catch (e) {
+      res.status(400).render("groups/createGroup", {
+        title: "Create a Group",
+        error: e.toString(),
+      });
+    }
+  });
 
 // Delete expense route - MUST come before /:id route to avoid conflicts
 router
-	.route("/:groupId/:expenseId")
+  .route("/:groupId/:expenseId")
 
-	.delete(requireAuth, async (req, res) => {
-		// Get path parameters.
-		let groupId = req.params.groupId;
-		let expenseId = req.params.expenseId;
+  .delete(requireAuth, async (req, res) => {
+    // Get path parameters.
+    let groupId = req.params.groupId;
+    let expenseId = req.params.expenseId;
 
-		// Input validation.
-		try {
-			groupId = checkId(groupId, "Group", "DELETE /:groupId/:expenseId");
-			expenseId = checkId(expenseId, "Expense", "DELETE /:groupId/:expenseId");
-		} catch (e) {
-			return res.status(400).json({ error: e });
-		}
+    // Input validation.
+    try {
+      groupId = checkId(groupId, "Group", "DELETE /:groupId/:expenseId");
+      expenseId = checkId(expenseId, "Expense", "DELETE /:groupId/:expenseId");
+    } catch (e) {
+      return res.status(400).json({ error: e });
+    }
 
-		// Call data function to delete expense.
-		try {
-			return res.json(await expensesData.deleteExpense(groupId, expenseId));
-		} catch (e) {
-			return res.status(500).json({ error: e });
-		}
-	});
+    // Call data function to delete expense.
+    try {
+      return res.json(await expensesData.deleteExpense(groupId, expenseId));
+    } catch (e) {
+      return res.status(500).json({ error: e });
+    }
+  });
 
 router.route("/:id").get(requireAuth, async (req, res) => {
-	try {
-		const id = checkId(req.params.id);
-		const group = await groupsData.getGroupByID(id);
-		const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
+  try {
+    const id = checkId(req.params.id);
+    const group = await groupsData.getGroupByID(id);
+    const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
 
-		// Get all users to map IDs to names
-		const allUsers = await usersData.getAllUsers();
-		const userMap = {};
-		allUsers.forEach((user) => {
-			userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
-		});
+    // Get all users to map IDs to names
+    const allUsers = await usersData.getAllUsers();
+    const userMap = {};
+    allUsers.forEach((user) => {
+      userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
+    });
 
-		// Format expenses for display with user names
-		const expenses = group.expenses || [];
-		const formattedExpenses = expenses.map((expense) => {
-			// Get payee name
-			const payeeName = userMap[expense.payee] || expense.payee;
+    // Format expenses for display with user names
+    const expenses = group.expenses || [];
+    const formattedExpenses = expenses.map((expense) => {
+      // Get payee name
+      const payeeName = userMap[expense.payee] || expense.payee;
 
-			// Get payer names
-			const payerNames = expense.payers.map(
-				(payerId) => userMap[payerId] || payerId
-			);
+      // Get payer names
+      const payerNames = expense.payers.map(
+        (payerId) => userMap[payerId] || payerId
+      );
 
-			return {
-				_id: expense._id.toString(),
-				name: expense.name,
-				cost: expense.cost.toFixed(2),
-				deadline: expense.deadline,
-				payee: expense.payee,
-				payeeName: payeeName,
-				payers: expense.payers,
-				payerNames: payerNames
-			};
-		});
+      return {
+        _id: expense._id.toString(),
+        name: expense.name,
+        cost: expense.cost.toFixed(2),
+        deadline: expense.deadline,
+        payee: expense.payee,
+        payeeName: payeeName,
+        payers: expense.payers,
+        payerNames: payerNames,
+      };
+    });
 
-		return res.render("groups/group", {
-			group: group,
-			group_id: id,
-			group_name: group.groupName,
-			group_description: group.groupDescription,
-			groupMembers: group.groupMembers,
-			groups: allGroups,
-			expenses: formattedExpenses,
-			hasExpenses: formattedExpenses.length > 0
-		});
-	} catch (e) {
-		return res.status(404).render("error", {
-			error: "Group Not Found"
-		});
-	}
+    return res.render("groups/group", {
+      group: group,
+      group_id: id,
+      group_name: group.groupName,
+      group_description: group.groupDescription,
+      groupMembers: group.groupMembers,
+      groups: allGroups,
+      expenses: formattedExpenses,
+      hasExpenses: formattedExpenses.length > 0,
+    });
+  } catch (e) {
+    return res.status(404).render("error", {
+      error: "Group Not Found",
+    });
+  }
 });
 
 // Expense routes
 router
-	.route("/:id/expense/new")
+  .route("/:id/expense/new")
 
-	.get(requireAuth, async (req, res) => {
+  .get(requireAuth, async (req, res) => {
+    try {
+      let group = await groupsData.getGroupByID(req.params.id);
+      return res.render("groups/createExpense", {
+        title: "Create Expense",
+        groupId: req.params.id,
+        group: group
+      });
+    } catch (e) {
+      return res.status(500).render("error", { error: e.toString() });
+    }
+  })
 
-		let group = await groupsData.getGroupByID(req.params.id);
-		console.log(group);
-		return res.render("groups/createExpense", {
-			title: "Create Expense",
-			groupId: req.params.id,
-			group: group
-		});
-	})
+  .post(requireAuth, async (req, res) => {
+    // Get path and request body parameters.
+    let groupId = req.params.id;
+    let { name, cost, deadline, payee, payers } = req.body;
 
-	.post(requireAuth, async (req, res) => {
+    // Input validation.
+    try {
+      groupId = checkId(groupId, "Group", "POST /:id/expense/new");
+      name = checkString(name, "Name", "POST /:id/expense/new");
+      cost = checkCost(Number(cost), "POST /:id/expense/new");
+      
+      // Handle date format conversion if needed
+      if (deadline.includes("-")) {
+        let splitDeadline = deadline.split("-");
+        deadline = `${splitDeadline[1]}/${splitDeadline[2]}/${splitDeadline[0]}`;
+      }
 
-		console.log(req.body);
+      deadline = checkDate(deadline, "Deadline", "POST /:id/expense/new");
+      payee = checkId(payee.toString(), "Payee", "POST /:id/expense/new");
+      for (let payer of payers) {
+        checkId(payer.toString(), "Payer", "POST /:id/expense/new");
+      }
+    } catch (e) {
+      let group;
+      try {
+        group = await groupsData.getGroupByID(groupId);
+      } catch (groupError) {
+        group = null;
+      }
+      
+      return res.status(500).render("groups/createExpense", {
+        title: "Create Expense",
+        groupId: groupId,
+        group: group,
+        error: typeof e === "string" ? e : "Unable to add expense",
+        form: {
+          name: req.body?.name ?? "",
+          cost: req.body?.cost ?? "",
+          deadline: req.body?.deadline ?? ""
+        }
+      });
+    }
 
-		// Get path and request body parameters.
-		let groupId = req.params.id;
-		let { name, cost, deadline, payee, payers } = req.body;
+    // Call data function to add the expense.
+    try {
+      await expensesData.createExpense(
+        groupId,
+        name,
+        cost,
+        deadline,
+        payee,
+        payers
+      );
+      res.redirect(`/groups/${groupId}/`);
+    } catch (e) {
+      let group;
+      try {
+        group = await groupsData.getGroupByID(groupId);
+      } catch (groupError) {
+        group = null;
+      }
 
-		// Input validation.
-		try {
+      return res.status(500).render("groups/createExpense", {
+        title: "Create Expense",
+        groupId: groupId,
+        group: group,
+        error: typeof e === "string" ? e : "Unable to add expense",
+        form: {
+          name: req.body?.name ?? "",
+          cost: req.body?.cost ?? "",
+          deadline: req.body?.deadline ?? ""
+        }
+      });
+    }
+  });
 
-			groupId = checkId(groupId, "Group", "POST /:id/expense/new");
-			name = checkString(name, "Name", "POST /:id/expense/new");
-			cost = checkCost(Number(cost), "POST /:id/expense/new");
-			
-			let splitDeadline = deadline.split("-");
-			deadline = `${splitDeadline[1]}/${splitDeadline[2]}/${splitDeadline[0]}`;
+// Edit Expense route
+router
+  .route("/:groupId/expense/:expenseId/edit")
+  .get(requireAuth, async (req, res) => {
+    try {
+      const groupId = checkId(
+        req.params.groupId,
+        "Group ID",
+        "GET /:groupId/expense/:expenseId/edit"
+      );
+      const expenseId = checkId(
+        req.params.expenseId,
+        "Expense ID",
+        "GET /:groupId/expense/:expenseId/edit"
+      );
 
-			deadline = checkDate(deadline, "Deadline", "POST /:id/expense/new");
-			payee = checkId(payee.toString(), "Payee", "POST /:id/expense/new");
-			for (let payer of payers) {
-				checkId(payer.toString(), "Payer", "POST /:id/expense/new");
-			}
+      const group = await groupsData.getGroupByID(groupId);
+      const expense = group.expenses?.find(
+        (exp) => exp._id.toString() === expenseId
+      );
 
-		} catch (e) {
-			return res.status(500).render("createExpense", {
-				title: "Create Expense",
-				error: typeof e === "string" ? e : "Unable to add expense",
-				form: {
-					name: req.body?.name ?? "",
-					cost: req.body?.cost ?? "",
-					deadline: req.body?.deadline ?? ""
-				}
-			});
-		}
+      if (!expense) {
+        return res.status(404).render("error", { error: "Expense not found." });
+      }
 
-		// Call data function to add the expense.
-		try {
-			await expensesData.createExpense(
-				groupId,
-				name,
-				cost,
-				deadline,
-				payee,
-				payers
-			);
-			res.redirect(`/groups/${groupId}/`);
-		} catch (e) {
-			return res.status(500).render("createExpense", {
-				title: "Create Expense",
-				error: typeof e === "string" ? e : "Unable to add expense",
-				form: {
-					name: req.body?.name ?? "",
-					cost: req.body?.cost ?? "",
-					deadline: req.body?.deadline ?? ""
-				}
-			});
-		}
-	});
+      const allUsers = await usersData.getAllUsers();
+      // use hashmap for easy look up :)
+      const userMap = {};
+      allUsers.forEach((user) => {
+        userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
+      });
+
+      return res.render("groups/editExpense", {
+        title: "Edit Expense",
+        group: group,
+        groupId: groupId,
+        expense: {
+          _id: expense._id.toString(),
+          name: expense.name,
+          cost: expense.cost,
+          deadline: expense.deadline,
+          payee: expense.payee,
+          payers: expense.payers,
+        },
+        groupMembers: group.groupMembers,
+      });
+    } catch (e) {
+      return res.status(400).render("error", {
+        error: e.toString(),
+      });
+    }
+  })
+  .put(requireAuth, async (req, res) => {
+    // Get path and request body parameters.
+    let groupId = req.params.groupId;
+    let expenseId = req.params.expenseId;
+    let { name, cost, deadline, payee, payers } = req.body;
+
+    // Input validation.
+    try {
+      groupId = checkId(
+        groupId,
+        "Group",
+        "POST /:groupId/expense/:expenseId/edit"
+      );
+      expenseId = checkId(
+        expenseId,
+        "Expense",
+        "POST /:groupId/expense/:expenseId/edit"
+      );
+      name = checkString(
+        name,
+        "Name",
+        "POST /:groupId/expense/:expenseId/edit"
+      );
+      cost = checkCost(cost, "POST /:groupId/expense/:expenseId/edit");
+      deadline = checkDate(
+        deadline,
+        "Deadline",
+        "POST /:groupId/expense/:expenseId/edit"
+      );
+      payee = checkId(
+        payee.toString(),
+        "Payee",
+        "POST /:groupId/expense/:expenseId/edit"
+      );
+      // Ensure payers is provided and is an array
+      if (!payers || (Array.isArray(payers) && payers.length === 0)) {
+        throw "At least one payer is required";
+      }
+      if (!Array.isArray(payers)) {
+        payers = [payers];
+      }
+      for (let payer of payers) {
+        checkId(
+          payer.toString(),
+          "Payer",
+          "POST /:groupId/expense/:expenseId/edit"
+        );
+      }
+    } catch (e) {
+      return res.status(400).json({ error: e });
+    }
+
+    // Call data function to edit the expense.
+    try {
+      const updatedExpense = await expensesData.editExpense(
+        groupId,
+        expenseId,
+        name,
+        cost,
+        deadline,
+        payee,
+        payers
+      );
+      return res.json(updatedExpense);
+    } catch (e) {
+      return res.status(500).json({ error: e });
+    }
+  });
 
 router
-	.route("/:id/addMember")
+  .route("/:id/addMember")
 
-	// GET route - render "add member" form
-	.get(requireAuth, async (req, res) => {
-		try {
-			const groupId = checkId(req.params.id);
-			const group = await groupsData.getGroupByID(groupId);
+  // GET route - render "add member" form
+  .get(requireAuth, async (req, res) => {
+    try {
+      const groupId = checkId(req.params.id);
+      const group = await groupsData.getGroupByID(groupId);
 
-			res.render("groups/addMember", {
-				title: "Add Member",
-				group: group
-			});
-		} catch (e) {
-			res.status(400).render("error", { error: e.toString() });
-		}
-	})
+      res.render("groups/addMember", {
+        title: "Add Member",
+        group: group,
+      });
+    } catch (e) {
+      res.status(400).render("error", { error: e.toString() });
+    }
+  })
 
-	// POST route - handle form submission
-	.post(requireAuth, async (req, res) => {
-		let groupId = req.params.id;
-		let { first_name, last_name, user_id } = req.body;
+  // POST route - handle form submission
+  .post(requireAuth, async (req, res) => {
+    let groupId = req.params.id;
+    let { first_name, last_name, user_id } = req.body;
 
-		// Input validation
-		try {
-			groupId = checkId(groupId, "Group ID", "POST /:id/addMember");
-			first_name = checkString(first_name, "First Name", "POST /:id/addMember");
-			last_name = checkString(last_name, "Last Name", "POST /:id/addMember");
-			user_id = checkUserId(user_id, "User ID", "POST /:id/addMember");
-		} catch (e) {
-			return res.status(400).render("groups/addMember", {
-				title: "Add Member",
-				error: e.toString()
-			});
-		}
+    // Input validation
+    try {
+      groupId = checkId(groupId, "Group ID", "POST /:id/addMember");
+      first_name = checkString(first_name, "First Name", "POST /:id/addMember");
+      last_name = checkString(last_name, "Last Name", "POST /:id/addMember");
+      user_id = checkUserId(user_id, "User ID", "POST /:id/addMember");
+    } catch (e) {
+      return res.status(400).render("groups/addMember", {
+        title: "Add Member",
+        error: e.toString(),
+      });
+    }
 
-		// Call data function to add the member
-		try {
-			const updatedGroup = await groupsData.addMember(
-				groupId,
-				first_name,
-				last_name,
-				user_id
-			);
-			const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
-			res.render("groups/group", {
-				title: "Group Updated",
-				group_name: updatedGroup.groupName,
-				group_description: updatedGroup.groupDescription,
-				groupMembers: updatedGroup.groupMembers,
-				groups: allGroups,
-				success: "Member added successfully!"
-			});
-		} catch (e) {
-			res.status(400).render("groups/addMember", {
-				title: "Add Member",
-				error: e.toString()
-			});
-		}
-	});
+    // Call data function to add the member
+    try {
+      const updatedGroup = await groupsData.addMember(
+        groupId,
+        first_name,
+        last_name,
+        user_id
+      );
+      const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
+      res.render("groups/group", {
+        title: "Group Updated",
+        group_name: updatedGroup.groupName,
+        group_description: updatedGroup.groupDescription,
+        groupMembers: updatedGroup.groupMembers,
+        groups: allGroups,
+        success: "Member added successfully!",
+      });
+    } catch (e) {
+      res.status(400).render("groups/addMember", {
+        title: "Add Member",
+        error: e.toString(),
+      });
+    }
+  });
 
-  router.route("/:id/removeMember")
+router
+  .route("/:id/removeMember")
 
   // GET route - show remove member form
   .get(requireAuth, async (req, res) => {
     try {
-      const groupId = checkId(req.params.id, "Group ID", "GET /:id/removeMember");
+      const groupId = checkId(
+        req.params.id,
+        "Group ID",
+        "GET /:id/removeMember"
+      );
       const group = await groupsData.getGroupByID(groupId);
 
       if (!group.groupMembers || group.groupMembers.length === 0) {
-        return res.status(400).render("error", { error: "No members to remove in this group." });
+        return res
+          .status(400)
+          .render("error", { error: "No members to remove in this group." });
       }
 
       res.render("groups/removeMember", {
         title: "Remove Member",
         group: group,
-        members: group.groupMembers
+        members: group.groupMembers,
       });
     } catch (e) {
       res.status(400).render("error", { error: e.toString() });
@@ -300,62 +446,61 @@ router
 
   // POST route - handle member removal
   .post(requireAuth, async (req, res) => {
-      let groupId = req.params.id;
+    let groupId = req.params.id;
     let { user_id } = req.body;
 
     let group;
     try {
-        groupId = checkId(groupId, "Group ID", "POST /:id/removeMember");
+      groupId = checkId(groupId, "Group ID", "POST /:id/removeMember");
 
-        // Fetch the group so we can use it in case of validation errors
-        group = await groupsData.getGroupByID(groupId);
+      // Fetch the group so we can use it in case of validation errors
+      group = await groupsData.getGroupByID(groupId);
 
-        user_id = checkId(user_id, "User ID", "POST /:id/removeMember");
+      user_id = checkId(user_id, "User ID", "POST /:id/removeMember");
     } catch (e) {
-        return res.status(400).render("groups/removeMember", {
-            title: "Remove Member",
-            group: group, // now defined
-            members: group ? group.groupMembers : [],
-            error: e.toString()
-        });
+      return res.status(400).render("groups/removeMember", {
+        title: "Remove Member",
+        group: group, // now defined
+        members: group ? group.groupMembers : [],
+        error: e.toString(),
+      });
     }
 
     // Call data function to remove member
     try {
-        const updatedGroup = await groupsData.removeMember(groupId, user_id);
-        const allGroups = await groupsData.getAllGroups();
+      const updatedGroup = await groupsData.removeMember(groupId, user_id);
+      const allGroups = await groupsData.getAllGroups();
 
-        res.render("groups/group", {
-            title: "Member Removed",
-            group: updatedGroup,
-            group_name: updatedGroup.groupName,
-            group_description: updatedGroup.groupDescription,
-            groupMembers: updatedGroup.groupMembers,
-            groups: allGroups,
-            success: "Member removed successfully!"
-        });
+      res.render("groups/group", {
+        title: "Member Removed",
+        group: updatedGroup,
+        group_name: updatedGroup.groupName,
+        group_description: updatedGroup.groupDescription,
+        groupMembers: updatedGroup.groupMembers,
+        groups: allGroups,
+        success: "Member removed successfully!",
+      });
     } catch (e) {
-        return res.status(400).render("groups/removeMember", {
-            title: "Remove Member",
-            group: group,
-            members: group.groupMembers,
-            error: e.toString()
-        });
+      return res.status(400).render("groups/removeMember", {
+        title: "Remove Member",
+        group: group,
+        members: group.groupMembers,
+        error: e.toString(),
+      });
     }
   });
 
 router.route("/").get(requireAuth, async (req, res) => {
-	try {
-		const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
-		res.render("groups/group", {
-			title: "Your Groups",
-			groups: allGroups,
-			user: req.session.user
-		});
-	} catch (e) {
-		res.status(500).render("error", { error: e.toString() });
-	}
+  try {
+    const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
+    res.render("groups/group", {
+      title: "Your Groups",
+      groups: allGroups,
+      user: req.session.user,
+    });
+  } catch (e) {
+    res.status(500).render("error", { error: e.toString() });
+  }
 });
-
 
 export default router;
