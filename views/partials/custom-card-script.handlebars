@@ -1,0 +1,21 @@
+<script>
+    // Set the card width to 50% of the initial viewport width.
+    let cards = document.getElementsByClassName('custom-card');
+    const initialWidth = screen.availWidth / {{initial_width_num}};
+    for (let i = 0; i < cards.length; i++) {
+        cards[i].style.width = initialWidth + 'px';
+    }
+
+    // Shrink card if window becomes smaller.
+    window.addEventListener('resize', () => {
+        if (window.innerWidth < initialWidth) {
+            for (let i = 0; i < cards.length; i++) {
+                cards[i].style.width = "100%";
+            }
+        } else {
+            for (let i = 0; i < cards.length; i++) {
+                cards[i].style.width = initialWidth + 'px';
+            }
+        }
+    });
+</script>

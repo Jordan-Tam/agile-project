@@ -1,38 +1,45 @@
-<h1>Edit Group</h1>
-
-{{#if error}}
-  <div class="error">{{error}}</div>
-{{/if}}
-
-<form action="/groups/{{group_id}}/edit" method="POST">
-  <div class="form-group">
-    <label for="groupName">Group Name:</label>
-    <input
-      type="text"
-      id="groupName"
-      name="groupName"
-      placeholder="Enter group name"
-      value="{{group_name}}"
-      required
-      minlength="5"
-      maxlength="50"
-    />
-  </div>
-
-  <div class="form-group">
-    <label for="groupDescription">Group Description:</label>
-    <textarea
-      id="groupDescription"
-      name="groupDescription"
-      placeholder="Describe your group"
-      maxlength="20000"
-      required
-    >{{group_description}}</textarea>
-  </div>
-
-  <button type="submit" id="updateBtn">Update Group</button>
-  <a href="/groups/{{group_id}}" id="cancelLink" style="margin-left: 10px;">Cancel</a>
-</form>
+{{> header}}
+<div class="container-fluid">
+	<form action="/groups/{{group._id}}" method="get" {{!-- style="margin-top: 10px;" --}}>
+		<button type="submit" class="btn btn-primary">
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+				<path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+			</svg>
+		</button>
+	</form>
+	<h1>Edit Group</h1>
+	{{#if error}}
+		<div class="error">{{error}}</div>
+	{{/if}}
+	<form method="POST" action="/groups/{{group_id}}/edit">
+		<div class="custom-card form-floating mb-3">
+			<input
+				class="form-control"
+				placeholder="Group name goes here"
+				type="text"
+				id="groupName"
+				name="groupName"
+				value="{{group_name}}"
+				required
+				minlength="5"
+				maxlength="50"
+			/>
+			<label for="groupName">Group Name</label>
+		</div>
+		<div class="custom-card form-floating mb-3">
+			<textarea
+				class="form-control"
+				placeholder="Group description goes here"
+				id="groupDescription"
+				name="groupDescription"
+				maxlength="20000"
+				required
+			>{{group_description}}</textarea>
+			<label for="groupDescription">Group Description</label>
+		</div>
+		<button type="submit" id="btn btn-primary">Update Group</button>
+	</form>
+</div>
 
 <!-- Confirmation Modal -->
 <div id="confirmModal" class="modal">
@@ -47,6 +54,7 @@
   </div>
 </div>
 
+{{> custom-card-script initial_width_num=3}}
 <script>
   // Store original values when page loads
   const originalName = document.getElementById('groupName').value;

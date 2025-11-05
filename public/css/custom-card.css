@@ -1,0 +1,12 @@
+.custom-card {
+    max-width: 100%; /* shrink if window smaller than card */
+    /* background: white; */
+    /* border-radius: 12px; */
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.1); */
+    /* padding: 20px; */
+    /* box-sizing: border-box; */
+}
+
+.custom-card:hover {
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}

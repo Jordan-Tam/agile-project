@@ -1,8 +1,11 @@
 <div class="col">
-    <div class="card text-bg-light w-50 mb-3">
+    <div class="custom-card card text-bg-light mb-3">
         <div class="card-body">
             <h4 class="card-title">
-                <a href="/groups/{{groupId}}">
+                <a
+                    href="/groups/{{groupId}}"
+                    style="text-decoration: none; font-weight: bold;"
+                >
                     {{groupName}}
                 </a>
             </h4>
@@ -10,11 +13,3 @@
         </div>
     </div>
 </div>
-<script>
-const cardDivs = document.getElementsByClassName('card');
-cardDivs.map((e) => {
-    e.addEventListener("click", () => {
-        1
-    })
-})
-</script>

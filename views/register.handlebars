@@ -7,7 +7,7 @@
 	{{/if}}
 
 	<form method="POST" action="/register" novalidate>
-		<div class="form-floating w-25 mb-3">
+		<div class="custom-card form-floating mb-3">
 			<input
 				class="form-control"
 				placeholder="First name goes here"
@@ -18,7 +18,7 @@
 			/>
 			<label for="firstName">First Name</label>
 		</div>
-		<div class="form-floating w-25 mb-3">
+		<div class="custom-card form-floating mb-3">
 			<input
 				class="form-control"
 				placeholder="Last name goes here"
@@ -29,7 +29,7 @@
 			/>
 			<label for="lastName">Last Name</label>
 		</div>
-		<div class="form-floating w-25 mb-3">
+		<div class="custom-card form-floating mb-3">
 			<input
 				class="form-control"
 				placeholder="User ID goes here"
@@ -40,7 +40,7 @@
 			/>
 			<label for="userId">User ID</label>
 		</div>
-		<div class="form-floating w-25 mb-3">
+		<div class="custom-card form-floating mb-3">
 			<input
 				class="form-control"
 				placeholder="Password goes here"
@@ -51,7 +51,7 @@
 			/>
 			<label for="password">Password</label>
 		</div>
-		<div class="form-floating w-25 mb-3">
+		<div class="custom-card form-floating mb-3">
 			<input
 				class="form-control"
 				placeholder="Confirm Password goes here"
@@ -66,4 +66,4 @@
 	</form>
 	<p>Already have an account? <a href="/login">Sign in</a></p>
 </div>
-
+{{> custom-card-script initial_width_num=4}}

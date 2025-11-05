@@ -1,33 +1,39 @@
-<h1>Create a New Group</h1>
+{{> header}}
+<div class="container-fluid">
 
-{{#if error}}
-  <div class="error">{{error}}</div>
-{{/if}}
+	<h1>Create a New Group</h1>
 
-<form action="/groups/new" method="POST">
-  <div class="form-group">
-    <label for="groupName">Group Name:</label>
-    <input
-      type="text"
-      id="groupName"
-      name="groupName"
-      placeholder="Enter group name"
-      required
-      minlength="5"
-      maxlength="50"
-    />
-  </div>
+	{{#if error}}
+		<div class="error">{{error}}</div>
+	{{/if}}
 
-  <div class="form-group">
-    <label for="groupDescription">Group Description:</label>
-    <textarea
-      id="groupDescription"
-      name="groupDescription"
-      placeholder="Describe your group"
-      maxlength="20000"
-      required
-    ></textarea>
-  </div>
+	<form method="POST" action="/groups/new" id="login-form">
+		<div class="custom-card form-floating mb-3">
+			<input
+				class="form-control"
+				placeholder="Group name goes here"
+				id="groupName"
+				name="groupName"
+				minLength="5"
+				maxLength="50"
+				required
+			/>
+			<label for="groupName">Group Name</label>
+		</div>
+		<div class="custom-card form-floating mb-3">
+			<textarea
+				class="form-control"
+				placeholder="Group name goes here"
+				id="groupDescription"
+				name="groupDescription"
+				maxLength="20000"
+				style="resize: both;"
+				required
+			></textarea>
+			<label for="groupDescription">Group Description</label>
+		</div>
+		<button type="submit">Create Group</button>
+	</form>
 
-  <button type="submit">Create Group</button>
-</form>
+</div>
+{{> custom-card-script initial_width_num=3}}

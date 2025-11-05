@@ -21,7 +21,8 @@ const constructorMethod = (app) => {
     console.log(groups);
     res.render("home", {
       user: req.session.user,
-      groups: groups
+      groups: groups,
+      stylesheet: "/public/css/custom-card.css"
     });
   });
 
