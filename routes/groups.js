@@ -260,6 +260,7 @@ router
           error: "You do not have permission to edit expenses in this group.",
         });
       }
+      
       const expense = group.expenses?.find(
         (exp) => exp._id.toString() === expenseId
       );
