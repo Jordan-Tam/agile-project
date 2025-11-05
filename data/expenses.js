@@ -110,7 +110,7 @@ const exportedMethods = {
 
 	// Get all expenses for a user (where user is a payer - they owe money)
 	async getAllExpensesForUser(userId) {
-		userId = checkId(userId, "User ID", "getAllExpensesForUser");
+		userId = checkId(userId, "User", "getAllExpensesForUser");
 		const userObjectId = new ObjectId(userId);
 
 		// Get all groups the user is a member of
@@ -180,7 +180,7 @@ const exportedMethods = {
 
 	// Search and filter expenses
 	async searchExpenses(userId, searchTerm, filterType, groupId) {
-		userId = checkId(userId, "User ID", "searchExpenses");
+		userId = checkId(userId, "User", "searchExpenses");
 		
 		// Get all expenses for user
 		let expenses = await this.getAllExpensesForUser(userId);
@@ -195,7 +195,7 @@ const exportedMethods = {
 
 		// Apply group filter
 		if (groupId && groupId.trim() !== "") {
-			groupId = checkId(groupId, "Group ID", "searchExpenses");
+			groupId = checkId(groupId, "Group", "searchExpenses");
 			expenses = expenses.filter(expense => 
 				expense.group._id === groupId
 			);

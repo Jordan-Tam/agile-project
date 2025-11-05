@@ -103,7 +103,7 @@ const exportedMethods = {
 
 	// Update an existing group
 	async updateGroup(groupId, groupName, groupDescription) {
-		groupId = checkId(groupId, "Group ID", "updateGroup");
+		groupId = checkId(groupId, "Group", "updateGroup");
 		groupName = checkString(groupName, "groupName", "updateGroup");
 		if (groupName.length < 5 || groupName.length > 50) {
 			throw "Invalid group name length";
