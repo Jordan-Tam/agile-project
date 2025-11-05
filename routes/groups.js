@@ -132,18 +132,7 @@ router
 				groupName,
 				groupDescription
 			);
-			const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
-
-			res.render("groups/group", {
-				title: "Group Updated",
-				group: updatedGroup,
-				group_id: groupId,
-				group_name: updatedGroup.groupName,
-				group_description: updatedGroup.groupDescription,
-				groupMembers: updatedGroup.groupMembers,
-				groups: allGroups,
-				success: "Group updated successfully!"
-			});
+			res.redirect(`/groups/${groupId}/`);
 		} catch (e) {
 			try {
 				const groupId = checkId(req.params.id);
@@ -484,17 +473,17 @@ router
   // POST route - handle form submission
   .post(requireAuth, async (req, res) => {
     let groupId = req.params.id;
-    let { first_name, last_name, user_id } = req.body;
+    let { user_id } = req.body;
 
     // Input validation
     try {
       groupId = checkId(groupId, "Group ID", "POST /:id/addMember");
-      first_name = checkString(first_name, "First Name", "POST /:id/addMember");
-      last_name = checkString(last_name, "Last Name", "POST /:id/addMember");
       user_id = checkUserId(user_id, "User ID", "POST /:id/addMember");
     } catch (e) {
+      const group = await groupsData.getGroupByID(groupId);
       return res.status(400).render("groups/addMember", {
         title: "Add Member",
+        group: group,
         error: e.toString(),
       });
     }
@@ -503,23 +492,14 @@ router
     try {
       const updatedGroup = await groupsData.addMember(
         groupId,
-        first_name,
-        last_name,
         user_id
       );
-      const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
-      res.render("groups/group", {
-        title: "Group Updated",
-        group_name: updatedGroup.groupName,
-        group_description: updatedGroup.groupDescription,
-        groupMembers: updatedGroup.groupMembers,
-        groups: allGroups,
-        success: "Member added successfully!",
-        stylesheet: "/public/css/styles.css"
-      });
+      res.redirect(`/groups/${groupId}/`);
     } catch (e) {
+      const group = await groupsData.getGroupByID(groupId);
       res.status(400).render("groups/addMember", {
         title: "Add Member",
+        group: group,
         error: e.toString(),
       });
     }
@@ -579,18 +559,7 @@ router
     // Call data function to remove member
     try {
       const updatedGroup = await groupsData.removeMember(groupId, user_id);
-      const allGroups = await groupsData.getAllGroups();
-
-      res.render("groups/group", {
-        title: "Member Removed",
-        group: updatedGroup,
-        group_name: updatedGroup.groupName,
-        group_description: updatedGroup.groupDescription,
-        groupMembers: updatedGroup.groupMembers,
-        groups: allGroups,
-        success: "Member removed successfully!",
-        stylesheet: "/public/css/styles.css"
-      });
+      res.redirect(`/groups/${groupId}/`);
     } catch (e) {
       return res.status(400).render("groups/removeMember", {
         title: "Remove Member",
