@@ -1,6 +1,8 @@
+import {ObjectId} from "mongodb";
 import { users as usersCollection } from "../config/mongoCollections.js";
 import bcrypt from "bcryptjs";
 import {
+	checkId,
 	checkName,
 	checkUserId,
 	checkPassword
@@ -94,11 +96,33 @@ const exportedMethods = {
 		};
 	},
 
+	async getUserById(id) {
+		id = checkId(id);
+
+		const users = await usersCollection();
+
+		const user = await users.findOne({ _id: new ObjectId(id) });
+
+		if (!user) {
+			throw "User not found.";
+		}
+
+		return {
+			_id: user._id.toString(),
+			firstName: user.firstName,
+			lastName: user.lastName,
+			userId: user.userId,
+			role: user.role,
+			signupDate: user.signupDate,
+			lastLogin: user.lastLogin
+		};
+	},
+
 	/**
 	 * Gets a user by userId (without password hash)
 	 */
 	async getUserByUserId(userId) {
-		userId = checkUserId(userId, "authenticateUser");
+		userId = checkUserId(userId, "getUserByUserId");
 
 		const usersCol = await usersCollection();
 		const user = await usersCol.findOne({ userId });
@@ -121,6 +145,85 @@ const exportedMethods = {
 	async getAllUsers() {
 		const users = await usersCollection();
 		return (await users.find({}).toArray());
+	},
+
+	async changeFirstName(id, oldFirstName, newFirstName) {
+
+	},
+
+	async changeLastName(id, oldLastName, newLastName) {
+
+	},
+
+	async changeUserId(id, oldUserId, newUserId) {
+		
+		// Basic input validation.
+		id = checkId(id);
+		oldUserId = checkUserId(oldUserId); // this is not necessary
+		newUserId = checkUserId(newUserId);
+
+		// If the old User ID and the new User ID are the same, don't bother updating the database and return immediately.
+		if (oldUserId === newUserId) {
+			return {
+				message: "You didn't change anything."
+			};
+		}
+
+		// Make sure this new User ID isn't already taken.
+		let users = await this.getAllUsers();
+		for (let user of users) {
+			if (user.userId.toLowerCase() === newUserId.toLowerCase()) {
+				throw "Username already taken.";
+			}
+		}
+
+		// Update user ID of the user.
+		const updatedUser = {
+			userId: newUserId
+		};
+		const usersCol = await usersCollection();
+		const updateInfo = await usersCol.findOneAndUpdate(
+			{_id: new ObjectId(id)},
+			{$set: updatedUser},
+			{returnDocument: 'after'}
+		);
+		if (!updateInfo) {
+			throw "User ID could not be changed.";
+		}
+
+		updateInfo._id = updateInfo._id.toString();
+
+		return updateInfo;
+
+	},
+
+	async changePassword(id, newPassword) {
+
+		// Basic input validation.
+		id = checkId(id);
+		newPassword = checkPassword(newPassword);
+
+		// Hash the password.
+		const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+		// Update the password of the user.
+		const updatedUser = {
+			passwordHash
+		};
+		const usersCol = await usersCollection();
+		const updateInfo = await usersCol.findOneAndUpdate(
+			{_id: new ObjectId(id)},
+			{$set: updatedUser},
+			{returnDocument: 'after'}
+		);
+		if (!updateInfo) {
+			throw "Password could not be changed.";
+		}
+
+		updateInfo._id = updateInfo._id.toString();
+
+		return updateInfo;
+
 	}
 
 }

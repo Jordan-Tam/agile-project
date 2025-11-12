@@ -3,8 +3,12 @@ import loginRoutes from "./login.js";
 import signoutRoutes from "./signout.js";
 import groupRoutes from "./groups.js";
 import searchRoutes from "./search.js";
+import profileRoutes from "./profile.js";
 import groupsData from "../data/groups.js";
-import {requireAuth} from "../middleware.js";
+import {
+  rewriteUnsupportedBrowserMethods,
+  requireAuth
+} from "../middleware.js";
 
 const constructorMethod = (app) => {
 
@@ -26,11 +30,6 @@ const constructorMethod = (app) => {
     });
   });
 
-  app.use("/profile", requireAuth, async (req, res) => {
-    // Change later
-    res.render("profile");
-  });
-
   app.use("/settings", requireAuth, async (req, res) => {
     // Change later
     res.render("settings");
@@ -38,6 +37,7 @@ const constructorMethod = (app) => {
 
   app.use("/register", registerRoutes);
   app.use("/login", loginRoutes);
+  app.use("/profile", rewriteUnsupportedBrowserMethods, profileRoutes)
   app.use("/signout", signoutRoutes);
   app.use("/groups", groupRoutes);
   app.use("/search", searchRoutes);

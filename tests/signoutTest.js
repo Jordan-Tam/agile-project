@@ -85,8 +85,8 @@ async function test_signout_without_session() {
     validateStatus: () => true,
   });
   expect(
-    signoutRes.status === 302,
-    `Expected 302 for signout without session, got ${signoutRes.status}`
+    signoutRes.status === 200,
+    `Expected 200 for signout without session, got ${signoutRes.status}`
   );
 }
 

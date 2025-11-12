@@ -42,6 +42,9 @@ app.engine(
 			},
 			ifEquals: function (arg1, arg2, options) {
 				return (arg1 === arg2) ? options.fn(this) : options.inverse(this);
+			},
+			concat: function (str1, str2) {
+				return str1 + str2;
 			}
 		}
 	})

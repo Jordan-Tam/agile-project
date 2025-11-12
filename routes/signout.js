@@ -21,6 +21,8 @@ router.get("/", async (req, res) => {
       res.render("signout", {
         title: "You've been signed out",
         message: "You have successfully signed out of your account.",
+        hide: true,
+        disable_brand: true
       });
     });
   } catch (error) {
