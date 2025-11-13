@@ -223,7 +223,102 @@ async removeMember(groupId, user_id) {
         : [];
 
     return updatedGroup;
-}
+},
+
+	// Calculate who owes whom in a group
+	async calculateGroupBalances(groupId) {
+		groupId = checkId(groupId, "Group", "calculateGroupBalances");
+		
+		// Get the group with all its data
+		const group = await this.getGroupByID(groupId);
+		
+		console.log("=== calculateGroupBalances DEBUG ===");
+		console.log("Group ID:", groupId);
+		console.log("Number of expenses:", group.expenses?.length || 0);
+		
+		if (!group.expenses || group.expenses.length === 0) {
+			// No expenses, no debts
+			console.log("No expenses found, returning empty balances");
+			return {};
+		}
+
+		// Initialize balance tracking: balances[debtor][creditor] = amount
+		const balances = {};
+		
+		// Process each expense
+		for (const expense of group.expenses) {
+			console.log("\nProcessing expense:", expense.name);
+			const payeeId = typeof expense.payee === 'object' ? expense.payee.toString() : expense.payee.toString();
+			const cost = parseFloat(expense.cost);
+			const numPayers = expense.payers.length;
+			const amountPerPayer = cost / numPayers;
+			
+			console.log("  Payee ID:", payeeId);
+			console.log("  Cost:", cost);
+			console.log("  Payers:", expense.payers.map(p => typeof p === 'object' ? p.toString() : p.toString()));
+			console.log("  Amount per payer:", amountPerPayer);
+			
+			// Each payer owes the payee their share
+			for (const payer of expense.payers) {
+				const payerId = typeof payer === 'object' ? payer.toString() : payer.toString();
+				
+				console.log("  Processing payer:", payerId);
+				
+				// Skip if payer is the same as payee (they don't owe themselves)
+				if (payerId === payeeId) {
+					console.log("    Skipping - payer is payee");
+					continue;
+				}
+				
+				// Initialize nested objects if needed
+				if (!balances[payerId]) balances[payerId] = {};
+				if (!balances[payerId][payeeId]) balances[payerId][payeeId] = 0;
+				
+				// Add to the amount this payer owes this payee
+				balances[payerId][payeeId] += amountPerPayer;
+			}
+		}
+		
+		// Simplify balances by netting out mutual debts
+		// If A owes B $10 and B owes A $6, simplify to A owes B $4
+		const userIds = Object.keys(balances);
+		for (const userId1 of userIds) {
+			for (const userId2 of Object.keys(balances[userId1])) {
+				if (balances[userId2] && balances[userId2][userId1]) {
+					const debt1to2 = balances[userId1][userId2];
+					const debt2to1 = balances[userId2][userId1];
+					
+					if (debt1to2 > debt2to1) {
+						balances[userId1][userId2] = debt1to2 - debt2to1;
+						delete balances[userId2][userId1];
+					} else if (debt2to1 > debt1to2) {
+						balances[userId2][userId1] = debt2to1 - debt1to2;
+						delete balances[userId1][userId2];
+					} else {
+						// Equal debts cancel out
+						delete balances[userId1][userId2];
+						delete balances[userId2][userId1];
+					}
+				}
+			}
+		}
+		
+		// Clean up empty nested objects
+		for (const userId of Object.keys(balances)) {
+			if (Object.keys(balances[userId]).length === 0) {
+				delete balances[userId];
+			}
+		}
+		
+		// Round all amounts to 2 decimal places
+		for (const userId of Object.keys(balances)) {
+			for (const creditorId of Object.keys(balances[userId])) {
+				balances[userId][creditorId] = parseFloat(balances[userId][creditorId].toFixed(2));
+			}
+		}
+		
+		return balances;
+	}
 
 };
 

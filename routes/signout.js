@@ -4,6 +4,12 @@ const router = Router();
 
 router.get("/", async (req, res) => {
   try {
+    // Check if there's an active session
+    if (!req.session || !req.session.user) {
+      // No active session, redirect to login
+      return res.redirect("/login");
+    }
+
     // Clear the session
     req.session.destroy((err) => {
       if (err) {
