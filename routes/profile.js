@@ -4,6 +4,7 @@ import usersData from "../data/users.js";
 import {requireAuth} from "../middleware.js";
 import {
     checkId,
+    checkName,
     checkUserId,
     checkPassword
 } from "../helpers.js";
@@ -24,7 +25,7 @@ router.patch("/", requireAuth, async (req, res) => {
 
     // Input validation for id. This should never fail.
     try {
-        id = checkId(id);
+        id = checkId(id, "User MongoDB ObjectID", "PATCH /profile");
     } catch (e) {
         return res.status(400).render("profile", {
             user: req.session.user,
@@ -42,19 +43,67 @@ router.patch("/", requireAuth, async (req, res) => {
 
     if (what_to_update === "firstName") {
 
-        //TODO:
-
         // Input validation.
+        try {
+            firstName = checkName(firstName, "First Name");
+        } catch (e) {
+            return res.status(400).render("profile", {
+                user: {
+                    _id: req.session.user._id,
+                    firstName: firstName, // repopulate with bad user input
+                    lastName: req.session.user.lastName,
+                    userId: req.session.user.userId 
+                },
+                firstName_error: e
+            });
+        }
 
         // Update the user.
+        try {
+            await usersData.changeFirstName(id, req.session.user.firstName, firstName);
+        } catch (e) {
+            return res.status(500).render("profile", {
+                user: {
+                    _id: req.session.user._id,
+                    firstName: firstName, // repopulate with bad user input
+                    lastName: req.session.user.lastName,
+                    userId: req.session.user.userId
+                },
+                lastName_error: e
+            });
+        }
 
     } else if (what_to_update === "lastName") {
 
-        //TODO:
-
         // Input validation.
+        try {
+            lastName = checkName(lastName, "Last Name");
+        } catch (e) {
+            return res.status(400).render("profile", {
+                user: {
+                    _id: req.session.user._id,
+                    firstName: req.session.user.firstName,
+                    lastName: lastName, // repopulate with bad user input
+                    userId: req.session.user.userId 
+                },
+                userId_error: e
+            });
+        }
 
         // Update the user.
+        try {
+            await usersData.changeLastName(id, req.session.user.lastName, lastName);
+        } catch (e) {
+            return res.status(500).render("profile", {
+                user: {
+                    _id: req.session.user._id,
+                    firstName: req.session.user.firstName, 
+                    lastName: lastName, // repopulate with bad user input
+                    userId: req.session.user.userId
+                },
+                userId_error: e
+            });
+        }
     
     } else if (what_to_update === "userId") {
 
@@ -135,7 +184,7 @@ router.patch("/", requireAuth, async (req, res) => {
         const user = await usersData.getUserById(id);
         req.session.user = user;
     } catch (e) {
-        console.log(e);
+        //console.log(e);
         return res.status(500).render("profile", {
             user: req.session.user,
             error: "An unexpected error has occurred."
