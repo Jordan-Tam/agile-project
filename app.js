@@ -42,6 +42,34 @@ app.engine(
 			},
 			ifEquals: function (arg1, arg2, options) {
 				return (arg1 === arg2) ? options.fn(this) : options.inverse(this);
+			},
+			formatCurrency: function (amount, currencyCode) {
+				// Default to USD if no currency code provided
+				currencyCode = currencyCode || 'USD';
+
+				// Currency symbols map
+				const currencySymbols = {
+					'USD': '$',
+					'EUR': '€',
+					'GBP': '£',
+					'JPY': '¥',
+					'CAD': 'CA$',
+					'AUD': 'A$',
+					'CHF': 'CHF',
+					'CNY': '¥',
+					'INR': '₹',
+					'MXN': 'MX$'
+				};
+
+				const symbol = currencySymbols[currencyCode] || currencyCode;
+				const formattedAmount = Number(amount).toFixed(2);
+
+				// For JPY and CNY, no decimal places needed
+				if (currencyCode === 'JPY' || currencyCode === 'CNY') {
+					return `${symbol}${Math.round(amount)}`;
+				}
+
+				return `${symbol}${formattedAmount}`;
 			}
 		}
 	})

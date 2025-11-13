@@ -40,6 +40,8 @@
     <form action="/groups/{{group._id}}/edit" method="get" style="display:inline;">
       <button type="submit">Edit Group</button>
     </form>
+
+    <button type="button" id="changeCurrencyBtn">Change Currency</button>
   </div>
   
    {{#if success}}
@@ -67,7 +69,7 @@
                   <div class="expense-item">
                       <div class="expense-info">
                           <h3>{{this.name}}</h3>
-                          <p class="expense-cost">${{this.cost}}</p>
+                          <p class="expense-cost">{{formatCurrency this.cost ../group.currency}}</p>
                           <p class="expense-deadline">Due: {{this.deadline}}</p>
                       </div>
                     <div class="expense-actions">
@@ -101,7 +103,7 @@
           <h2>Expense Details</h2>
         <div id="modalBody">
             <p><strong>Name:</strong> <span id="modal-name"></span></p>
-            <p><strong>Cost:</strong> $<span id="modal-cost"></span></p>
+            <p><strong>Cost:</strong> <span id="modal-cost" data-currency-display></span></p>
             <p><strong>Deadline:</strong> <span id="modal-deadline"></span></p>
             <p><strong>Payee:</strong> <span id="modal-payee"></span></p>
             <p><strong>Payers:</strong></p>
@@ -112,9 +114,78 @@
         </div>
       </div>
   </div>
+
+  <!-- Change Currency Modal -->
+  <div id="currencyModal" class="modal">
+      <div class="modal-content">
+          <span class="close-currency">&times;</span>
+          <h2>Change Currency</h2>
+          <form id="changeCurrencyForm">
+              <label for="currencySelect">Select Currency:</label>
+              <select id="currencySelect" name="currency" required>
+                  <option value="USD" {{#ifEquals group.currency 'USD'}}selected{{/ifEquals}}>USD ($) - US Dollar</option>
+                  <option value="EUR" {{#ifEquals group.currency 'EUR'}}selected{{/ifEquals}}>EUR (€) - Euro</option>
+                  <option value="GBP" {{#ifEquals group.currency 'GBP'}}selected{{/ifEquals}}>GBP (£) - British Pound</option>
+                  <option value="JPY" {{#ifEquals group.currency 'JPY'}}selected{{/ifEquals}}>JPY (¥) - Japanese Yen</option>
+                  <option value="CAD" {{#ifEquals group.currency 'CAD'}}selected{{/ifEquals}}>CAD (CA$) - Canadian Dollar</option>
+                  <option value="AUD" {{#ifEquals group.currency 'AUD'}}selected{{/ifEquals}}>AUD (A$) - Australian Dollar</option>
+                  <option value="CHF" {{#ifEquals group.currency 'CHF'}}selected{{/ifEquals}}>CHF - Swiss Franc</option>
+                  <option value="CNY" {{#ifEquals group.currency 'CNY'}}selected{{/ifEquals}}>CNY (¥) - Chinese Yuan</option>
+                  <option value="INR" {{#ifEquals group.currency 'INR'}}selected{{/ifEquals}}>INR (₹) - Indian Rupee</option>
+                  <option value="MXN" {{#ifEquals group.currency 'MXN'}}selected{{/ifEquals}}>MXN (MX$) - Mexican Peso</option>
+              </select>
+              <div class="modal-actions">
+                  <button type="submit" class="btn btn-primary">Save Currency</button>
+                  <button type="button" class="btn btn-secondary" id="cancelCurrencyBtn">Cancel</button>
+              </div>
+          </form>
+      </div>
+  </div>
   {{/if}}
 
   <script>
+      // Currency formatting helper
+      const currencySymbols = {
+          'USD': '$',
+          'EUR': '€',
+          'GBP': '£',
+          'JPY': '¥',
+          'CAD': 'CA$',
+          'AUD': 'A$',
+          'CHF': 'CHF',
+          'CNY': '¥',
+          'INR': '₹',
+          'MXN': 'MX$'
+      };
+
+      let currentCurrency = '{{group.currency}}' || 'USD';
+
+      function formatCurrency(amount, currencyCode) {
+          const symbol = currencySymbols[currencyCode] || currencyCode;
+          const numAmount = Number(amount);
+
+          // For JPY and CNY, no decimal places
+          if (currencyCode === 'JPY' || currencyCode === 'CNY') {
+              return `${symbol}${Math.round(numAmount)}`;
+          }
+
+          return `${symbol}${numAmount.toFixed(2)}`;
+      }
+
+      function updateAllCurrencyDisplays() {
+          // Update all expense costs in the list
+          document.querySelectorAll('.expense-cost').forEach(el => {
+              const rawCost = el.textContent.replace(/[^0-9.]/g, '');
+              el.textContent = formatCurrency(rawCost, currentCurrency);
+          });
+
+          // Update modal if it has a cost displayed
+          const modalCost = document.getElementById('modal-cost');
+          if (modalCost && modalCost.dataset.rawCost) {
+              modalCost.textContent = formatCurrency(modalCost.dataset.rawCost, currentCurrency);
+          }
+      }
+
       // Modal functionality
       const modal = document.getElementById('expenseModal');
       const closeBtn = document.querySelector('.close');
@@ -131,7 +202,11 @@
               const payers = JSON.parse(this.getAttribute('data-expense-payers'));
 
               document.getElementById('modal-name').textContent = name;
-              document.getElementById('modal-cost').textContent = cost;
+
+              const modalCostEl = document.getElementById('modal-cost');
+              modalCostEl.dataset.rawCost = cost;
+              modalCostEl.textContent = formatCurrency(cost, currentCurrency);
+
               document.getElementById('modal-deadline').textContent = deadline;
               document.getElementById('modal-payee').textContent = payee;
 
@@ -196,5 +271,69 @@
               }
           });
       });
+
+      // Currency modal functionality
+      const currencyModal = document.getElementById('currencyModal');
+      const changeCurrencyBtn = document.getElementById('changeCurrencyBtn');
+      const closeCurrencyBtn = document.querySelector('.close-currency');
+      const cancelCurrencyBtn = document.getElementById('cancelCurrencyBtn');
+      const changeCurrencyForm = document.getElementById('changeCurrencyForm');
+
+      if (changeCurrencyBtn) {
+          changeCurrencyBtn.addEventListener('click', function() {
+              currencyModal.style.display = 'block';
+          });
+      }
+
+      if (closeCurrencyBtn) {
+          closeCurrencyBtn.addEventListener('click', function() {
+              currencyModal.style.display = 'none';
+          });
+      }
+
+      if (cancelCurrencyBtn) {
+          cancelCurrencyBtn.addEventListener('click', function() {
+              currencyModal.style.display = 'none';
+          });
+      }
+
+      window.addEventListener('click', function(event) {
+          if (event.target === currencyModal) {
+              currencyModal.style.display = 'none';
+          }
+      });
+
+      // Handle currency change form submission
+      if (changeCurrencyForm) {
+          changeCurrencyForm.addEventListener('submit', async function(e) {
+              e.preventDefault();
+
+              const selectedCurrency = document.getElementById('currencySelect').value;
+
+              try {
+                  const response = await fetch('/groups/{{group._id}}/changeCurrency', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({ currency: selectedCurrency })
+                  });
+
+                  if (response.ok) {
+                      const data = await response.json();
+                      // Reload page to show converted expense amounts
+                      window.location.reload();
+                  } else {
+                      const error = await response.json();
+                      alert('Error updating currency: ' + (error.error || 'Unknown error'));
+                  }
+              } catch (error) {
+                  alert('Error updating currency: ' + error.message);
+              }
+          });
+      }
+
+      // Initialize currency displays on page load
+      updateAllCurrencyDisplays();
   </script>
 </div>
