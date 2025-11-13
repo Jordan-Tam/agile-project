@@ -1,13 +1,14 @@
 import axios from "axios";
-import * as chai from 'chai';
+import * as chai from "chai";
 import groupsData from "../data/groups.js";
-import chaiAsPromised from 'chai-as-promised';
+import chaiAsPromised from "chai-as-promised";
 import { spawn } from "child_process";
 import { dbConnection, closeConnection } from "../config/mongoConnection.js";
 import { runAuthTests } from "./authTests.js";
 import { runGroupTests } from "./groupsTests.js";
 import { runExpenseTests } from "./expensesTests.js";
 import { runSignoutTests } from "./signoutTest.js";
+import { runPdfExportTests } from "./pdfExportTests.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -163,6 +164,9 @@ async function run() {
 		console.log("\n=== Running Signout Tests ===");
 		await runSignoutTests();
 
+		console.log("\n=== Running PDF Export Tests ===");
+		await runPdfExportTests();
+
 		// Run the inline group data tests
 		//await runInlineGroupTests();
 
@@ -175,6 +179,7 @@ async function run() {
 		console.log("Expenses tests -> see above logs");
 		console.log("Search Expenses tests -> see above logs");
 		console.log("Signout tests -> see above logs");
+		console.log("PDF Export tests -> see above logs");
 		console.log("Inline group data tests -> see above logs");
 	} catch (err) {
 		console.error("Error running tests:", err);
