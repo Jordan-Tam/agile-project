@@ -191,3 +191,58 @@
 .close:focus {
 	color: #000;
 }
+
+/* Member List Styles */
+.member-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.member-item {
+	background: #f8f9fa;
+	border: 1px solid #dee2e6;
+	border-radius: 8px;
+	padding: 15px;
+	margin-bottom: 10px;
+	transition: box-shadow 0.3s;
+}
+
+.member-item:hover {
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.member-name {
+	font-weight: bold;
+	font-size: 16px;
+	color: #333;
+	display: block;
+	margin-bottom: 8px;
+}
+
+.balance-list {
+	list-style: none;
+	padding-left: 20px;
+	margin: 8px 0 0 0;
+}
+
+.balance-item {
+	color: #666;
+	font-size: 14px;
+	padding: 4px 0;
+	border-left: 3px solid #dc3545;
+	padding-left: 10px;
+	margin-bottom: 4px;
+}
+
+.balance-item strong {
+	color: #dc3545;
+	font-weight: 600;
+}
+
+.no-debts {
+	color: #28a745;
+	font-size: 14px;
+	font-style: italic;
+	margin-left: 10px;
+}

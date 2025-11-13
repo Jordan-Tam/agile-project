@@ -9,6 +9,7 @@ import { runGroupTests } from "./groupsTests.js";
 import { runExpenseTests } from "./expensesTests.js";
 import { runSignoutTests } from "./signoutTest.js";
 import { runPdfExportTests } from "./pdfExportTests.js";
+import { runBalanceTests } from "./balanceTests.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -167,6 +168,9 @@ async function run() {
 		console.log("\n=== Running PDF Export Tests ===");
 		await runPdfExportTests();
 
+		console.log("\n=== Running Balance Calculation Tests ===");
+		const balanceSummary = await runBalanceTests();
+
 		// Run the inline group data tests
 		//await runInlineGroupTests();
 
@@ -180,6 +184,9 @@ async function run() {
 		console.log("Search Expenses tests -> see above logs");
 		console.log("Signout tests -> see above logs");
 		console.log("PDF Export tests -> see above logs");
+		console.log(
+			`Balance tests -> total: ${balanceSummary.total}, failed: ${balanceSummary.failed}`
+		);
 		console.log("Inline group data tests -> see above logs");
 	} catch (err) {
 		console.error("Error running tests:", err);
