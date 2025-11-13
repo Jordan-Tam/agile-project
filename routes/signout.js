@@ -3,19 +3,25 @@ import { Router } from "express";
 const router = Router();
 
 router.get("/", async (req, res) => {
-  try {
-    // Clear the session
-    req.session.destroy((err) => {
-      if (err) {
-        console.error("Error destroying session:", err);
-        return res.status(500).send("Error while logging out.");
-      }
+	try {
+		// Check if there's an active session
+		if (!req.session || !req.session.user) {
+			// No active session, redirect to login
+			return res.redirect("/login");
+		}
 
-      // Clear the session cookie
-      res.clearCookie("AuthenticationState");
+		// Clear the session
+		req.session.destroy((err) => {
+			if (err) {
+				console.error("Error destroying session:", err);
+				return res.status(500).send("Error while logging out.");
+			}
 
-      // Clear any other potential cookies
-      res.clearCookie("connect.sid");
+			// Clear the session cookie
+			res.clearCookie("AuthenticationState");
+
+			// Clear any other potential cookies
+			res.clearCookie("connect.sid");
 
       // Render the sign-out page instead of redirecting to login
       res.render("signout", {
