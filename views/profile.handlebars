@@ -1,6 +1,121 @@
 {{> header}}
 <main>
     <div class="container-fluid">
-        <a href="/signout" class="btn btn-primary">Sign Out</a>
+        <p {{#unless error}}style="display: none;"{{/unless}}>{{error}}</p>
+        <div class="container-fluid rounded px-4 py-4 mb-3 bg-info-subtle bg-opacity-25">
+            <h5 class="mb-3">Change First Name</h5>
+            <form method="POST" action="/profile">
+                <div class="custom-card form-floating mb-3">
+                    <input
+                        class="form-control"
+                        placeholder="First name goes here"
+                        type="text"
+                        id="firstName"
+                        name="firstName"
+                        value="{{user.firstName}}"
+                        required
+                    />
+                    <label for="firstName">First Name</label>
+                </div>
+                <input type="hidden" name="what_to_update" value="firstName">
+                <input type="hidden" name="id" value="{{user._id}}">
+                <input type="hidden" name="_method" value="PATCH">
+                <button type="submit" class="btn btn-primary">Update First Name</button>
+            </form>
+            <p {{#unless firstName_error}}style="display: none;"{{/unless}}>{{firstName_error}}</p>
+        </div>
+        <div class="container-fluid rounded px-4 py-4 mb-3 bg-warning-subtle">
+            <h5 class="mb-3">Change Last Name</h5>
+            <form method="POST" action="/profile">
+                <div class="custom-card form-floating mb-3">
+                    <input
+                        class="form-control"
+                        placeholder="Last name goes here"
+                        type="text"
+                        id="lastName"
+                        name="lastName"
+                        value="{{user.lastName}}"
+                        required
+                    />
+                    <label for="lastName">Last Name</label>
+                </div>
+                <input type="hidden" name="what_to_update" value="lastName">
+                <input type="hidden" name="id" value="{{user._id}}">
+                <input type="hidden" name="_method" value="PATCH">
+                <button type="submit" class="btn btn-primary">Update Last Name</button>
+            </form>
+            <p {{#unless lastName_error}}style="display: none;"{{/unless}}>{{lastName_error}}</p>
+        </div>
+        <div class="container-fluid rounded px-4 py-4 mb-3 bg-info-subtle bg-opacity-25">
+            <h5 class="mb-3">Change User ID</h5>
+            <form method="POST" action="/profile">
+                <div class="custom-card form-floating mb-3">
+                    <input
+                        class="form-control"
+                        placeholder="userId goes here"
+                        type="text"
+                        id="userId"
+                        name="userId"
+                        value="{{user.userId}}"
+                        required
+                    />
+                    <label for="userId">User ID</label>
+                </div>
+                <input type="hidden" name="what_to_update" value="userId">
+                <input type="hidden" name="id" value="{{user._id}}">
+                <input type="hidden" name="_method" value="PATCH">
+                <button type="submit" class="btn btn-primary">Update User ID</button>
+            </form>
+            <p {{#unless userId_error}}style="display: none;"{{/unless}}>{{userId_error}}</p>
+        </div>
+        <div class="container-fluid rounded px-4 py-4 mb-3 bg-warning-subtle">
+            <h5 class="mb-3">Change Password</h5>
+            <form method="POST" action="/profile">
+                <div class="custom-card form-floating mb-3">
+                    <input
+                        class="form-control"
+                        placeholder="Old password goes here"
+                        type="password"
+                        id="oldPassword"
+                        name="oldPassword"
+                        required
+                    />
+                    <label for="oldPassword">Old Password</label>
+                </div>
+                <div class="custom-card form-floating mb-3">
+                    <input
+                        class="form-control"
+                        placeholder="New password goes here"
+                        type="password"
+                        id="newPassword"
+                        name="newPassword"
+                        required
+                    />
+                    <label for="newPassword">New Password</label>
+                </div>
+                <div class="custom-card form-floating mb-3">
+                    <input
+                        class="form-control"
+                        placeholder="Confirm password goes here"
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        required
+                    />
+                    <label for="confirmPassword">Confirm Password</label>
+                </div>
+                <input type="hidden" name="what_to_update" value="password">
+                <input type="hidden" name="id" value="{{user._id}}">
+                <input type="hidden" name="_method" value="PATCH">
+                <button type="submit" class="btn btn-primary">Update Password</button>
+            </form>
+            <p {{#unless password_error}}style="display: none;"{{/unless}}>{{password_error}}</p>
+        </div>
+        <div class="container-fluid rounded px-4 py-4 mb-3 bg-danger-subtle">
+            <div class="col">
+                <a href="/signout" class="btn btn-primary">Sign Out</a>
+            </div>
+        </div>
     </div>
 </main>
+{{> custom-card-script initial_width_num=4}}

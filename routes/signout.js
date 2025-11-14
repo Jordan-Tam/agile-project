@@ -23,16 +23,18 @@ router.get("/", async (req, res) => {
 			// Clear any other potential cookies
 			res.clearCookie("connect.sid");
 
-			// Render the sign-out page instead of redirecting to login
-			res.render("signout", {
-				title: "You've been signed out",
-				message: "You have successfully signed out of your account."
-			});
-		});
-	} catch (error) {
-		console.error("Signout error:", error);
-		res.status(500).json({ error: error.message });
-	}
+      // Render the sign-out page instead of redirecting to login
+      res.render("signout", {
+        title: "You've been signed out",
+        message: "You have successfully signed out of your account.",
+        hide: true,
+        disable_brand: true
+      });
+    });
+  } catch (error) {
+    console.error("Signout error:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 export default router;
