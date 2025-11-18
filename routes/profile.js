@@ -1,6 +1,7 @@
 import {Router} from "express";
 import xss from "xss";
 import usersData from "../data/users.js";
+import groupsData from "../data/groups.js";
 import {requireAuth} from "../middleware.js";
 import {
     checkId,
@@ -11,9 +12,32 @@ import {
 
 const router = Router();
 
-// Move the /profile from index.js to here.
-router.get("/", requireAuth, (req, res) => {
-    res.render("profile", {
+// Profile view page - shows user info and groups
+router.get("/", requireAuth, async (req, res) => {
+    try {
+        // Get user's groups
+        const userGroups = await groupsData.getGroupsForUser(req.session.user._id);
+
+        // Check for success message from redirect
+        const success = req.query.success === 'true' ? 'Profile updated successfully!' : null;
+
+        res.render("profileView", {
+            user: req.session.user,
+            userGroups: userGroups,
+            success: success
+        });
+    } catch (e) {
+        console.error("Error loading profile:", e);
+        res.render("profileView", {
+            user: req.session.user,
+            userGroups: []
+        });
+    }
+});
+
+// Edit profile page - shows the forms
+router.get("/edit", requireAuth, (req, res) => {
+    res.render("editProfile", {
         user: req.session.user
     });
 });
@@ -27,7 +51,7 @@ router.patch("/", requireAuth, async (req, res) => {
     try {
         id = checkId(id, "User MongoDB ObjectID", "PATCH /profile");
     } catch (e) {
-        return res.status(400).render("profile", {
+        return res.status(400).render("editProfile", {
             user: req.session.user,
             error: "An unexpected error has occurred."
         });
@@ -35,7 +59,7 @@ router.patch("/", requireAuth, async (req, res) => {
 
     // Make sure the ID matches that of the currently logged in user.
     if (req.session.user._id.toString() !== id.toString()) {
-        return res.status(403).render("profile", {
+        return res.status(403).render("editProfile", {
             user: req.session.user,
             error: "An unexpected error has occurred."
         });
@@ -47,12 +71,12 @@ router.patch("/", requireAuth, async (req, res) => {
         try {
             firstName = checkName(firstName, "First Name");
         } catch (e) {
-            return res.status(400).render("profile", {
+            return res.status(400).render("editProfile", {
                 user: {
                     _id: req.session.user._id,
                     firstName: firstName, // repopulate with bad user input
                     lastName: req.session.user.lastName,
-                    userId: req.session.user.userId 
+                    userId: req.session.user.userId
                 },
                 firstName_error: e
             });
@@ -62,7 +86,7 @@ router.patch("/", requireAuth, async (req, res) => {
         try {
             await usersData.changeFirstName(id, req.session.user.firstName, firstName);
         } catch (e) {
-            return res.status(500).render("profile", {
+            return res.status(500).render("editProfile", {
                 user: {
                     _id: req.session.user._id,
                     firstName: firstName, // repopulate with bad user input
@@ -79,14 +103,14 @@ router.patch("/", requireAuth, async (req, res) => {
         try {
             lastName = checkName(lastName, "Last Name");
         } catch (e) {
-            return res.status(400).render("profile", {
+            return res.status(400).render("editProfile", {
                 user: {
                     _id: req.session.user._id,
                     firstName: req.session.user.firstName,
                     lastName: lastName, // repopulate with bad user input
-                    userId: req.session.user.userId 
+                    userId: req.session.user.userId
                 },
-                userId_error: e
+                lastName_error: e
             });
         }
 
@@ -94,24 +118,24 @@ router.patch("/", requireAuth, async (req, res) => {
         try {
             await usersData.changeLastName(id, req.session.user.lastName, lastName);
         } catch (e) {
-            return res.status(500).render("profile", {
+            return res.status(500).render("editProfile", {
                 user: {
                     _id: req.session.user._id,
-                    firstName: req.session.user.firstName, 
+                    firstName: req.session.user.firstName,
                     lastName: lastName, // repopulate with bad user input
                     userId: req.session.user.userId
                 },
-                userId_error: e
+                lastName_error: e
             });
         }
-    
+
     } else if (what_to_update === "userId") {
 
         // Input validation.
         try {
             userId = checkUserId(userId);
         } catch (e) {
-            return res.status(400).render("profile", {
+            return res.status(400).render("editProfile", {
                 user: {
                     _id: req.session.user._id,
                     firstName: req.session.user.firstName,
@@ -126,7 +150,7 @@ router.patch("/", requireAuth, async (req, res) => {
         try {
             await usersData.changeUserId(id, req.session.user.userId, userId);
         } catch (e) {
-            return res.status(500).render("profile", {
+            return res.status(500).render("editProfile", {
                 user: {
                     _id: req.session.user._id,
                     firstName: req.session.user.firstName,
@@ -143,7 +167,7 @@ router.patch("/", requireAuth, async (req, res) => {
         try {
             await usersData.authenticateUser(req.session.user.userId, oldPassword);
         } catch (e) {
-            return res.status(400).render("profile", {
+            return res.status(400).render("editProfile", {
                 user: req.session.user,
                 password_error: "Old Password does not match your current password."
             });
@@ -153,7 +177,7 @@ router.patch("/", requireAuth, async (req, res) => {
         try {
             newPassword = checkPassword(newPassword);
         } catch (e) {
-            return res.status(400).render("profile", {
+            return res.status(400).render("editProfile", {
                 user: req.session.user,
                 password_error: e
             });
@@ -161,7 +185,7 @@ router.patch("/", requireAuth, async (req, res) => {
 
         // Make sure newPassword and confirmPassword match.
         if (newPassword !== confirmPassword) {
-            return res.status(400).render("profile", {
+            return res.status(400).render("editProfile", {
                 user: req.session.user,
                 password_error: "New Password and Confirm Password do not match."
             });
@@ -171,7 +195,7 @@ router.patch("/", requireAuth, async (req, res) => {
         try {
             await usersData.changePassword(id, newPassword);
         } catch (e) {
-            return res.status(500).render("profile", {
+            return res.status(500).render("editProfile", {
                 user: req.session.user,
                 password_error: e
             });
@@ -185,15 +209,14 @@ router.patch("/", requireAuth, async (req, res) => {
         req.session.user = user;
     } catch (e) {
         //console.log(e);
-        return res.status(500).render("profile", {
+        return res.status(500).render("editProfile", {
             user: req.session.user,
             error: "An unexpected error has occurred."
         });
     }
 
-    return res.render("profile", {
-        user: req.session.user
-    });
+    // Redirect back to profile view with success message
+    return res.redirect("/profile?success=true");
 
 });
 
