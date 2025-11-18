@@ -1,5 +1,104 @@
-<div class="expense-form-container">
-    <h1>Edit Expense</h1>
+{{> header}}
+
+<div class="container-fluid">
+
+    {{> back-button route=(concat "/groups/" group._id)}}
+
+    <h1 class="mb-3">Edit Expense</h1>
+
+    <form method="POST" action="/groups/{{groupId}}/expense/{{expense._id}}/edit?_method=PUT" id="editExpenseForm">
+
+        <div class="custom-card form-floating mb-3">
+            <input
+                class="form-control"
+                placeholder="Name goes here"
+                id="name"
+                name="name"
+                value="{{expense.name}}"
+                required
+            />
+            <label for="name">Name</label>
+        </div>
+
+        <div class="custom-card form-floating mb-3">
+            <input
+                class="form-control"
+                placeholder="Cost goes here"
+                id="cost"
+                name="cost"
+                value="{{expense.cost}}"
+                type="number"
+                step="0.01"
+                min="0"
+                required
+            />
+            <label for="cost">Cost</label>
+        </div>
+
+        <div class="custom-card form-floating mb-3">
+            <input
+                class="form-control"
+                placeholder="Deadline goes here"
+                id="deadline"
+                name="deadline"
+                type="date"
+                value="{{formatDateForInput expense.deadline}}"
+                required
+            />
+            <label for="deadline">Deadline</label>
+        </div>
+
+        <div class="form-group">
+            <label for="payee">Payee (who paid):</label>
+            <select id="payee" name="payee" required>
+                {{#each groupMembers}}
+                    <option value="{{this._id}}" {{#if (eq this._id ../expense.payee)}}selected{{/if}}>
+                        {{this.firstName}} {{this.lastName}}
+                    </option>
+                {{/each}}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Payers (who owes):</label>
+            {{#each groupMembers}}
+                <div class="checkbox-group">
+                    <input type="checkbox" 
+                           id="payer-{{this._id}}" 
+                           name="payers" 
+                           value="{{this._id}}"
+                           {{#if (contains ../expense.payers this._id)}}checked{{/if}}>
+                    <label for="payer-{{this._id}}">{{this.firstName}} {{this.lastName}}</label>
+                </div>
+            {{/each}}
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Update Expense</button>
+            <a href="/groups/{{groupId}}" class="btn btn-secondary">Cancel</a>
+        </div>
+            
+        </div>
+
+        <div id="error-message" class="error" style="display: none;"></div>
+
+    </form>
+
+{{!-- 
+            <label for="payee">Payee (who paid):</label>
+            <select id="payee" name="payee" required>
+                {{#each groupMembers}}
+                    <option value="{{this._id}}" {{#if (eq this._id ../expense.payee)}}selected{{/if}}>
+                        {{this.firstName}} {{this.lastName}}
+                    </option>
+                {{/each}}
+            </select>
+ --}}
+
+</div>
+
+{{!-- <div class="expense-form-container">
+    
     
     <form id="editExpenseForm" method="POST" action="/groups/{{groupId}}/expense/{{expense._id}}/edit?_method=PUT">
         <div class="form-group">
@@ -49,8 +148,9 @@
     </form>
     
     <div id="error-message" class="error" style="display: none;"></div>
-</div>
+</div> --}}
 
+{{> custom-card-script initial_width_num=3}}
 <script>
     // Handle form submission
     document.getElementById('editExpenseForm').addEventListener('submit', async function(e) {

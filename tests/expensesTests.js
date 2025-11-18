@@ -383,7 +383,7 @@ export async function runExpenseTests() {
 
 		// Valid test - get all expenses for user[0]
 		const userExpenses = await expensesData.getAllExpensesForUser(usersList[0]._id.toString());
-		console.log(userExpenses);
+		//console.log(userExpenses);
 		
 		// Should return 3 expenses (expense1, expense2, expense3) but NOT expense4
 		assert.strictEqual(userExpenses.length, 4); // Nope, it's 4 now.

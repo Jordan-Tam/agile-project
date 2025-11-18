@@ -42,6 +42,9 @@
     </form>
 
     <button type="button" id="changeCurrencyBtn">Change Currency</button>
+    <form action="/groups/{{group._id}}/export-pdf" method="get" style="display:inline;">
+      <button type="submit" class="btn-export">Export PDF</button>
+    </form>
   </div>
   
    {{#if success}}
@@ -55,9 +58,20 @@
     {{#if groupMembers}}
       <br>
       <h3>Group Members</h3>
-      <ul>
+      <ul class="member-list">
         {{#each groupMembers}}
-          <li>{{this.firstName}} {{this.lastName}}</li>
+          <li class="member-item">
+            <span class="member-name">{{this.firstName}} {{this.lastName}}</span>
+            {{#with (lookup ../balances this._id)}}
+              <ul class="balance-list">
+                {{#each owes}}
+                  <li class="balance-item">Owes {{this.creditorName}} <strong>${{this.amount}}</strong></li>
+                {{/each}}
+              </ul>
+            {{else}}
+              <span class="no-debts">(No outstanding debts)</span>
+            {{/with}}
+          </li>
         {{/each}}
       </ul>
     {{/if}}
