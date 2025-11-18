@@ -1,5 +1,4 @@
 // Currency conversion rates (base: USD)
-// Note: In production, these should be fetched from an API like exchangerate-api.com
 const exchangeRates = {
 	USD: 1.0,
 	EUR: 0.92,
