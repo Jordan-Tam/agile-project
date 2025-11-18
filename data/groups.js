@@ -2,6 +2,7 @@ import { groups } from "../config/mongoCollections.js";
 import { checkString, checkId, checkUserId } from "../helpers.js";
 import { ObjectId } from "mongodb";
 import user from "./users.js";
+import { convertCurrency } from "./currencyConverter.js";
 
 const exportedMethods = {
 	// Get group by ID (accepts string, converts to ObjectId internally)
@@ -91,7 +92,8 @@ const exportedMethods = {
 
 		const newGroup = {
 			groupName,
-			groupDescription
+			groupDescription,
+			currency: "USD" // Default currency for new groups
 		};
 
 		const groupCollection = await groups();
@@ -185,6 +187,7 @@ const exportedMethods = {
 
 		return updatedGroup;
 	},
+
 	// Remove a member from a group
 	async removeMember(groupId, user_id) {
 		// === Input validation ===
@@ -227,6 +230,71 @@ const exportedMethods = {
 			: [];
 
 		return updatedGroup;
+	},
+
+	// Update currency for a group
+	async updateCurrency(groupId, currencyCode) {
+		groupId = checkId(groupId, "Group", "updateCurrency");
+		currencyCode = checkString(currencyCode, "Currency", "updateCurrency");
+
+		// Valid currency codes
+		const validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'MXN'];
+
+		if (!validCurrencies.includes(currencyCode)) {
+			throw "Invalid currency code";
+		}
+
+		const groupCollection = await groups();
+		const groupObjectId = new ObjectId(groupId);
+
+		// Check if group exists
+		const existingGroup = await groupCollection.findOne({ _id: groupObjectId });
+		if (!existingGroup) {
+			throw "Error: Group not found";
+		}
+
+		const oldCurrency = existingGroup.currency || 'USD';
+
+		// Convert all expense costs to new currency
+		if (existingGroup.expenses && existingGroup.expenses.length > 0) {
+			const convertedExpenses = existingGroup.expenses.map(expense => {
+				const convertedCost = convertCurrency(expense.cost, oldCurrency, currencyCode);
+				return {
+					...expense,
+					cost: convertedCost
+				};
+			});
+
+			// Update the group with new currency and converted expenses
+			const updateResult = await groupCollection.findOneAndUpdate(
+				{ _id: groupObjectId },
+				{
+					$set: {
+						currency: currencyCode,
+						expenses: convertedExpenses
+					}
+				},
+				{ returnDocument: "after" }
+			);
+
+			if (!updateResult) {
+				throw "Error: Failed to update group currency";
+			}
+		} else {
+			// No expenses, just update currency
+			const updateResult = await groupCollection.findOneAndUpdate(
+				{ _id: groupObjectId },
+				{ $set: { currency: currencyCode } },
+				{ returnDocument: "after" }
+			);
+
+			if (!updateResult) {
+				throw "Error: Failed to update group currency";
+			}
+		}
+
+		// Return the updated group
+		return this.getGroupByID(groupId);
 	},
 
 	// Calculate who owes whom in a group
