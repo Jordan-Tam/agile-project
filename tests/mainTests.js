@@ -11,6 +11,7 @@ import { runSignoutTests } from "./signoutTest.js";
 import { runPdfExportTests } from "./pdfExportTests.js";
 import { runBalanceTests } from "./balanceTests.js";
 import { runChangeUserIDAndPasswordTests } from "./changeUserIDAndPasswordTests.js";
+import { runCurrencyConverterTests } from "./currencyConverterTests.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -175,6 +176,9 @@ async function run() {
 		console.log("\n=== Running Change Name, User ID, and Password Tests ===");
 		await runChangeUserIDAndPasswordTests();
 
+		console.log("\n=== Running Currency Converter Tests ===");
+		const currencySummary = await runCurrencyConverterTests();
+
 		// Run the inline group data tests
 		//await runInlineGroupTests();
 
@@ -192,6 +196,9 @@ async function run() {
 			`Balance tests -> total: ${balanceSummary.total}, failed: ${balanceSummary.failed}`
 		);
 		console.log("Change Name, User ID, and Password tests -> see above logs");
+		console.log(
+			`Currency Converter tests -> total: ${currencySummary.total}, failed: ${currencySummary.failed}`
+		);
 		console.log("Inline group data tests -> see above logs");
 	} catch (err) {
 		console.error("Error running tests:", err);

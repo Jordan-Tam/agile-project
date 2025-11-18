@@ -761,6 +761,30 @@ router
 		}
 	});
 
+// Change currency route
+router
+  .route("/:id/changeCurrency")
+  .post(requireAuth, async (req, res) => {
+    try {
+      const groupId = checkId(req.params.id);
+      const { currency } = req.body;
+
+      if (!currency) {
+        return res.status(400).json({ error: "Currency is required" });
+      }
+
+      const updatedGroup = await groupsData.updateCurrency(groupId, currency);
+
+      res.json({
+        success: true,
+        message: "Currency updated successfully",
+        currency: updatedGroup.currency
+      });
+    } catch (e) {
+      res.status(400).json({ error: e.toString() });
+    }
+  });
+
 router.route("/").get(requireAuth, async (req, res) => {
 	try {
 		const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
