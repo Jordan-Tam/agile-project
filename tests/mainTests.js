@@ -13,6 +13,7 @@ import { runBalanceTests } from "./balanceTests.js";
 import { runChangeUserIDAndPasswordTests } from "./changeUserIDAndPasswordTests.js";
 import { runCurrencyConverterTests } from "./currencyConverterTests.js";
 import { runDeleteGroupTests } from "./deleteGroupTests.js";
+import { runUpdateBalanceTests } from "./updateBalanceTests.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -165,6 +166,9 @@ async function run() {
 		console.log("\n=== Running Expenses Tests ===");
 		await runExpenseTests();
 
+		console.log("\n=== Running Update Balance Tests ===");
+		await runUpdateBalanceTests();
+
 		console.log("\n=== Running Signout Tests ===");
 		await runSignoutTests();
 
@@ -193,6 +197,7 @@ async function run() {
 		console.log("Groups tests -> see above logs");
 		console.log("Edit Group tests -> see above logs");
 		console.log("Expenses tests -> see above logs");
+		console.log("Update Balance tests -> see above logs");
 		console.log("Search Expenses tests -> see above logs");
 		console.log("Signout tests -> see above logs");
 		console.log("PDF Export tests -> see above logs");

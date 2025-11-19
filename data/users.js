@@ -168,7 +168,7 @@ const exportedMethods = {
 		const updateInfo = await usersCol.findOneAndUpdate(
 			{_id: new ObjectId(id)},
 			{$set: updatedUser},
-			{returnDocument: 'after'}
+			{returnDocument: 'after', returnOriginal: false}
 		);
 		if (!updateInfo) {
 			throw "First Name could not be changed.";
@@ -201,7 +201,7 @@ const exportedMethods = {
 		const updateInfo = await usersCol.findOneAndUpdate(
 			{_id: new ObjectId(id)},
 			{$set: updatedUser},
-			{returnDocument: 'after'}
+			{returnDocument: 'after', returnOriginal: false}
 		);
 		if (!updateInfo) {
 			throw "Last Name could not be changed.";
@@ -242,7 +242,7 @@ const exportedMethods = {
 		const updateInfo = await usersCol.findOneAndUpdate(
 			{_id: new ObjectId(id)},
 			{$set: updatedUser},
-			{returnDocument: 'after'}
+			{returnDocument: 'after', returnOriginal: false}
 		);
 		if (!updateInfo) {
 			throw "User ID could not be changed.";
@@ -271,7 +271,7 @@ const exportedMethods = {
 		const updateInfo = await usersCol.findOneAndUpdate(
 			{_id: new ObjectId(id)},
 			{$set: updatedUser},
-			{returnDocument: 'after'}
+			{returnDocument: 'after', returnOriginal: false}
 		);
 		if (!updateInfo) {
 			throw "Password could not be changed.";

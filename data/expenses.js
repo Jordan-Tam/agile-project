@@ -5,6 +5,73 @@ import groupsData from "./groups.js";
 import { checkString, checkId, checkCost, checkDate } from "../helpers.js";
 
 const exportedMethods = {
+   async addPayment(groupId, expenseId, payerId, amount) {
+    groupId = checkId(groupId, "Group", "addPayment");
+    expenseId = checkId(expenseId, "Expense", "addPayment");
+    payerId = checkId(payerId, "Payer", "addPayment");
+    if (typeof amount !== "number" || isNaN(amount) || amount < 0) {
+      throw "Invalid payment amount";
+    }
+
+    const groupsCollection = await groups();
+    const group = await groupsData.getGroupByID(groupId);
+    if (!group) throw "Group not found";
+
+    const expense = (group.expenses || []).find(exp => exp._id.toString() === expenseId);
+    if (!expense) throw "Expense not found";
+    const numPayers = expense.payers.length;
+    if (numPayers === 0) throw "Expense has no payers";
+
+    // amountPerPayer is the share each payer should pay (based on original cost)
+    const amountPerPayer = parseFloat((expense.cost / numPayers).toFixed(2));
+
+    // Find or default existing payments map for payer
+    const payments = expense.payments || [];
+    let paymentEntry = payments.find(p => (typeof p.payer === 'object' ? p.payer.toString() : p.payer) === payerId);
+    if (!paymentEntry) {
+      // Create a payment entry if missing (backwards compatibility for old expenses)
+      paymentEntry = { payer: new ObjectId(payerId), paid: 0 };
+      payments.push({
+        payer: new ObjectId(payerId),
+        paid: 0
+      });
+    }
+
+    const alreadyPaid = parseFloat(Number(paymentEntry.paid).toFixed(2));
+    const remaining = parseFloat((amountPerPayer - alreadyPaid).toFixed(2));
+
+    if (amount > remaining) {
+      throw `Payment amount cannot exceed remaining owed amount ${remaining}`;
+    }
+    // Update the payment entry
+    paymentEntry.paid = parseFloat((alreadyPaid + amount).toFixed(2));
+
+    // Write the updated expenses array back to DB (safe approach)
+    const updatedExpenses = (group.expenses || []).map(exp => {
+      if (exp._id.toString() === expenseId) {
+        // ensure we store payments as simple objects (payer string, paid number)
+        return {
+          ...exp,
+          payments: payments
+        };
+      }
+      return exp;
+    });
+
+    const updateResult = await groupsCollection.findOneAndUpdate(
+      { _id: new ObjectId(groupId) },
+      { $set: { expenses: updatedExpenses } },
+      { returnDocument: "after", returnOriginal: false}
+    );
+    if (!updateResult) {
+      throw "Failed to record payment";
+    }
+
+    // Return the updated expense object from the returned document
+    const updatedGroup = updateResult;
+    const updatedExpense = (updatedGroup.expenses || []).find(e => e._id.toString() === expenseId);
+    return updatedExpense;
+  },
   async createExpense(group, name, cost, deadline, payee, payers) {
     // Input validation
     group = checkId(group.toString(), "Group", "createExpense");
@@ -48,16 +115,22 @@ const exportedMethods = {
       deadline,
       payee,
       payers,
+      payments: payers.map(p => ({
+        payer: new ObjectId(typeof p === "object" ? p.toString() : p),
+        paid: 0
+      }))
     };
 
     // Add to the group's expenses array
     const groupsCollection = await groups();
+    console.log("About to insert expense:", JSON.stringify(newExpense, null, 2));
+    console.log("Group members:", JSON.stringify(groupDoc.groupMembers, null, 2));
     const updateResult = await groupsCollection.findOneAndUpdate(
       { _id: new ObjectId(group) },
       { $push: { expenses: newExpense } },
-      { returnDocument: "after" }
+      { returnDocument: "after", returnOriginal: false}
     );
-
+    console.log("Update result:", updateResult); // Add this debug line
     if (!updateResult) throw "Error: Failed to insert expense.";
 
     // Return the inserted expense document
@@ -96,7 +169,7 @@ const exportedMethods = {
     const deleteInfo = await groupsCollection.findOneAndUpdate(
       { _id: new ObjectId(group._id) },
       { $pull: { expenses: { _id: new ObjectId(expenseId) } } },
-      { returnDocument: "after" }
+      { returnDocument: "after", returnOriginal: false}
     );
 
     // Make sure the deletion was successful.
@@ -157,7 +230,7 @@ const exportedMethods = {
           "expenses.$.payers": payers,
         },
       },
-      { returnDocument: "after" }
+      { returnDocument: "after", returnOriginal: false}
     );
 
     if (!updateResult) throw "Error: Failed to update expense.";
@@ -308,6 +381,7 @@ const exportedMethods = {
 
     return expenses;
   }
+
 };
 
 export default exportedMethods;
