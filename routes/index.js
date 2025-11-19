@@ -22,7 +22,6 @@ const constructorMethod = (app) => {
 
   app.use("/home", requireAuth, async (req, res) => {
     let groups = await groupsData.getGroupsForUser(req.session.user._id);
-    console.log(groups);
     res.render("home", {
       user: req.session.user,
       groups: groups,
@@ -39,7 +38,7 @@ const constructorMethod = (app) => {
   app.use("/login", loginRoutes);
   app.use("/profile", rewriteUnsupportedBrowserMethods, profileRoutes)
   app.use("/signout", signoutRoutes);
-  app.use("/groups", groupRoutes);
+  app.use("/groups", rewriteUnsupportedBrowserMethods, groupRoutes);
   app.use("/search", searchRoutes);
 
   app.use(/(.*)/, (req, res) => {

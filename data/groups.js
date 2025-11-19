@@ -144,21 +144,34 @@ const exportedMethods = {
 		return this.getGroupByID(groupId);
 	},
 
+	async deleteGroup(groupId) {
+
+		// Input validation.
+		groupId = checkId(groupId);
+
+		// User documents do not store the groups they are a member of, so there is no need to update the user documents when removing a group.
+		
+		// Delete the group document.
+		const groupsCollection = await groups();
+		const deletionInfo = await groupsCollection.findOneAndDelete({
+			_id: new ObjectId(groupId)
+		});
+		if (!deletionInfo) {
+			throw "Group could not be deleted.";
+		}
+
+		return true;
+
+	},
+
 	// Add a member to a group
 	async addMember(groupId, /*  first_name, last_name, */ user_id) {
 		groupId = checkId(groupId);
-		//first_name = checkString(first_name);
-		//last_name = checkString(last_name);
 		user_id = checkUserId(user_id);
 
 		// Find the user from users data
 		const userList = await user.getAllUsers(); // returns array
-		const theUser = userList.find(
-			(u) =>
-				/* u.firstName === first_name &&
-				u.lastName === last_name && */
-				u.userId.toString() === user_id
-		);
+		const theUser = userList.find((u) => u.userId.toString() === user_id);
 
 		if (!theUser) throw "No user found with these credentials";
 

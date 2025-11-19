@@ -364,18 +364,20 @@ router.route("/:id/export-pdf").get(requireAuth, async (req, res) => {
 	}
 });
 
-router.route("/:id").get(requireAuth, async (req, res) => {
-	try {
-		const id = checkId(req.params.id);
-		const group = await groupsData.getGroupByID(id);
-		const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
+router.route("/:id")
 
-		// Get all users to map IDs to names
-		const allUsers = await usersData.getAllUsers();
-		const userMap = {};
-		allUsers.forEach((user) => {
-			userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
-		});
+	.get(requireAuth, async (req, res) => {
+		try {
+			const id = checkId(req.params.id);
+			const group = await groupsData.getGroupByID(id);
+			const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
+
+			// Get all users to map IDs to names
+			const allUsers = await usersData.getAllUsers();
+			const userMap = {};
+			allUsers.forEach((user) => {
+				userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
+			});
 
 		// Format expenses for display with user names
 		const expenses = group.expenses || [];
@@ -428,41 +430,41 @@ router.route("/:id").get(requireAuth, async (req, res) => {
 	});
 
 
-		// Calculate balances (who owes whom)
-		const balances = await groupsData.calculateGroupBalances(id);
+			// Calculate balances (who owes whom)
+			const balances = await groupsData.calculateGroupBalances(id);
 
-		// Debug: Log the raw balances
-		console.log("Raw balances:", JSON.stringify(balances, null, 2));
+			// Debug: Log the raw balances
+			// console.log("Raw balances:", JSON.stringify(balances, null, 2));
 
-		// Format balances with names for display
-		const formattedBalances = {};
-		for (const debtorId of Object.keys(balances)) {
-			const debtorName = userMap[debtorId] || debtorId;
-			formattedBalances[debtorId] = {
-				debtorName: debtorName,
-				owes: []
-			};
+			// Format balances with names for display
+			const formattedBalances = {};
+			for (const debtorId of Object.keys(balances)) {
+				const debtorName = userMap[debtorId] || debtorId;
+				formattedBalances[debtorId] = {
+					debtorName: debtorName,
+					owes: []
+				};
 
-			for (const creditorId of Object.keys(balances[debtorId])) {
-				const creditorName = userMap[creditorId] || creditorId;
-				const amount = balances[debtorId][creditorId];
-				formattedBalances[debtorId].owes.push({
-					creditorId: creditorId,
-					creditorName: creditorName,
-					amount: amount
-				});
+				for (const creditorId of Object.keys(balances[debtorId])) {
+					const creditorName = userMap[creditorId] || creditorId;
+					const amount = balances[debtorId][creditorId];
+					formattedBalances[debtorId].owes.push({
+						creditorId: creditorId,
+						creditorName: creditorName,
+						amount: amount
+					});
+				}
 			}
-		}
 
-		// Debug: Log formatted balances
-		console.log(
-			"Formatted balances:",
-			JSON.stringify(formattedBalances, null, 2)
-		);
-		console.log(
-			"Group members:",
-			group.groupMembers.map((m) => `${m.firstName} ${m.lastName} (${m._id})`)
-		);
+			// Debug: Log formatted balances
+			/* console.log(
+				"Formatted balances:",
+				JSON.stringify(formattedBalances, null, 2)
+			);
+			console.log(
+				"Group members:",
+				group.groupMembers.map((m) => `${m.firstName} ${m.lastName} (${m._id})`)
+			); */
 
 		return res.render("groups/group", {
 			group: group,

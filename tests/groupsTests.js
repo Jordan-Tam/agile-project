@@ -49,6 +49,7 @@ export async function runGroupTests() {
 			_id: group_1._id,
 			groupName: "group 1",
 			groupDescription: "This is group 1",
+			currency: "USD",
 			groupMembers: []
 		});
 

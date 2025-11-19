@@ -1,6 +1,8 @@
 // Middleware to support PUT, DELETE, and PATCH requests.
 export const rewriteUnsupportedBrowserMethods = (req, res, next) => {
 	if (req.body && req.body._method) {
+		console.log("hi");
+		console.log(req.body._method);
 		req.method = req.body._method;
 		delete req.body._method;
 	}

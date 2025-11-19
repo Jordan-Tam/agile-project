@@ -254,7 +254,6 @@ const checkUserId = (userId, funcName) => {
 	}
 
 	if (userId.length < 5 || userId.length > 10) {
-		console.log(userId);
 		throw "userId must be 5-10 characters.";
 	}
 
