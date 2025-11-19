@@ -1,0 +1,100 @@
+{{> header}}
+<div class="container-fluid">
+    <div class="mb-3">
+        <a href="/logs" class="btn btn-secondary mb-3">← Back to Groups</a>
+        {{#ifEquals groupStatus "deleted"}}
+            <span class="badge bg-danger ms-2">This group has been deleted</span>
+        {{/ifEquals}}
+    </div>
+
+    <h1 class="mb-3">{{group.groupName}}</h1>
+    {{#if group.groupDescription}}
+        <p class="mb-4">{{group.groupDescription}}</p>
+    {{/if}}
+
+    <div class="mb-4">
+        <a href="/logs/{{group._id}}/change-logs" class="btn btn-primary me-2">Show Group Change Logs</a>
+    </div>
+
+    <h2 class="mb-4">Expenses</h2>
+
+    <!-- Search and Sort Form -->
+    {{#ifEquals groupStatus "active"}}
+    <form method="POST" action="/logs/{{group._id}}" class="mb-4">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="searchTerm" class="form-label">Search by Expense Name:</label>
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    id="searchTerm" 
+                    name="searchTerm" 
+                    placeholder="Enter expense name..."
+                    value="{{searchTerm}}"
+                />
+            </div>
+            <div class="col-md-3">
+                <label for="filterType" class="form-label">Sort By:</label>
+                <select class="form-select" id="filterType" name="filterType">
+                    <option value="">No Sort</option>
+                    <option value="closestDue" {{#ifEquals filterType "closestDue"}}selected{{/ifEquals}}>Closest Due</option>
+                    <option value="farthestDue" {{#ifEquals filterType "farthestDue"}}selected{{/ifEquals}}>Farthest Due</option>
+                    <option value="lowestAmount" {{#ifEquals filterType "lowestAmount"}}selected{{/ifEquals}}>Lowest Amount</option>
+                    <option value="highestAmount" {{#ifEquals filterType "highestAmount"}}selected{{/ifEquals}}>Highest Amount</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">Search</button>
+                <a href="/logs/{{group._id}}" class="btn btn-secondary">Clear</a>
+            </div>
+        </div>
+    </form>
+    {{/ifEquals}}
+
+    <!-- Results Section -->
+    <div class="mt-4">
+        {{#if hasExpenses}}
+            <h3 class="mb-3">Expenses ({{expenses.length}})</h3>
+            <div class="expenses-list">
+                {{#each expenses}}
+                    <div class="expense-item mb-3 p-3 border rounded {{#if this.isDeleted}}opacity-75 border-danger{{/if}}" style="{{#if this.isDeleted}}opacity: 0.7;{{/if}}">
+                        <div class="expense-info">
+                            {{#if this.isDeleted}}
+                                <span class="badge bg-danger mb-2">Deleted</span>
+                            {{/if}}
+                            <h4>{{this.name}}</h4>
+                            <p class="mb-1"><strong>Cost:</strong> {{formatCurrency this.cost ../currency}}</p>
+                            <p class="mb-1"><strong>Due:</strong> {{this.deadline}}</p>
+                            <p class="mb-1"><strong>Payee:</strong> {{this.payeeName}}</p>
+                            <p class="mb-1"><strong>Payers:</strong> {{this.payerNames}}</p>
+                            <p class="mb-1"><strong>Amount per Payer:</strong> {{formatCurrency this.amountPerPayer ../currency}}</p>
+                        </div>
+                        <div class="expense-actions mt-3">
+                            <a href="/logs/{{../group._id}}/expenses/{{this._id}}/change-logs" class="btn btn-info">View Change Logs</a>
+                        </div>
+                    </div>
+                {{/each}}
+            </div>
+        {{else}}
+            <div class="alert alert-info">
+                <h4>No expenses found</h4>
+                <p>{{#if searchTerm}}No expenses match your search criteria.{{else}}{{#ifEquals groupStatus "deleted"}}This group was deleted, so expenses are no longer available.{{else}}No expenses yet for this group.{{/ifEquals}}{{/if}}</p>
+            </div>
+        {{/if}}
+    </div>
+</div>
+
+<script>
+    // Auto-submit form when dropdown changes
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form[action="/logs/{{group._id}}"]');
+        const sortFilter = document.getElementById('filterType');
+
+        if (sortFilter && form) {
+            sortFilter.addEventListener('change', function() {
+                form.submit();
+            });
+        }
+    });
+</script>
+

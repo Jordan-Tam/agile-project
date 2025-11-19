@@ -14,6 +14,7 @@ import { runChangeUserIDAndPasswordTests } from "./changeUserIDAndPasswordTests.
 import { runCurrencyConverterTests } from "./currencyConverterTests.js";
 import { runDeleteGroupTests } from "./deleteGroupTests.js";
 import { runUpdateBalanceTests } from "./updateBalanceTests.js";
+import { runChangeLogsTests } from "./changeLogsTests.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -187,6 +188,9 @@ async function run() {
 		console.log("\n=== Running Delete Group Tests ===");
 		await runDeleteGroupTests();
 
+		console.log("\n=== Running Change Logs Tests ===");
+		await runChangeLogsTests();
+
 		// Run the inline group data tests
 		//await runInlineGroupTests();
 
@@ -209,6 +213,7 @@ async function run() {
 			`Currency Converter tests -> total: ${currencySummary.total}, failed: ${currencySummary.failed}`
 		);
 		console.log("Delete Group tests -> see above logs");
+		console.log("Change Logs tests -> see above logs");
 		console.log("Inline group data tests -> see above logs");
 	} catch (err) {
 		console.error("Error running tests:", err);
