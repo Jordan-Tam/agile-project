@@ -34,6 +34,10 @@ const constructorMethod = (app) => {
     res.render("settings");
   });
 
+  app.use("/manual", requireAuth, async (req, res) => {
+    res.render("instruction-manual");
+  });
+
   app.use("/register", registerRoutes);
   app.use("/login", loginRoutes);
   app.use("/profile", rewriteUnsupportedBrowserMethods, profileRoutes)

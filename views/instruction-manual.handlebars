@@ -1,0 +1,161 @@
+{{> header}}
+<main>
+    <div class="container-fluid mt-4">
+        <h1 class="mb-4">Instruction Manual</h1>
+        <p class="lead mb-4">Welcome to Expense Splitter! This guide will help you navigate and use the app's features.</p>
+
+        <div class="row">
+            <div class="col-lg-10">
+                <!-- Creating Groups -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Creating Groups</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>Groups allow you to organize expenses with other users. Here's how to create one:</p>
+                        <ol>
+                            <li>From the <strong>Home</strong> page, click the <strong>"Create Group"</strong> button (the button with a plus icon).</li>
+                            <li>Fill in the required information:
+                                <ul>
+                                    <li><strong>Group Name:</strong> Enter a name for your group (e.g., "Weekend Trip", "Household Expenses")</li>
+                                    <li><strong>Group Description:</strong> Provide a brief description of what the group is for</li>
+                                </ul>
+                            </li>
+                            <li>Click <strong>"Create Group"</strong> to finish.</li>
+                        </ol>
+                        <p class="mb-0"><strong>Tip:</strong> After creating a group, you can add members, create expenses, and manage group settings.</p>
+                    </div>
+                </div>
+
+                <!-- Creating and Editing Expenses -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Creating and Editing Expenses</h2>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="mt-3">Creating an Expense</h5>
+                        <ol>
+                            <li>Navigate to a group page by clicking on a group from your <strong>Home</strong> page.</li>
+                            <li>Click the <strong>"Add Expense"</strong> button.</li>
+                            <li>Fill in the expense details:
+                                <ul>
+                                    <li><strong>Name:</strong> Enter a name for the expense (e.g., "Dinner", "Gas", "Groceries")</li>
+                                    <li><strong>Cost:</strong> Enter the total cost of the expense (in dollars)</li>
+                                    <li><strong>Deadline:</strong> Select the date by which this expense should be settled</li>
+                                    <li><strong>Payee:</strong> Select who paid for this expense</li>
+                                    <li><strong>Payers:</strong> Select all members who should split the cost</li>
+                                </ul>
+                            </li>
+                            <li>Click <strong>"Create Expense"</strong> to save.</li>
+                        </ol>
+
+                        <h5 class="mt-4">Editing an Expense</h5>
+                        <ol>
+                            <li>Go to the group page containing the expense you want to edit.</li>
+                            <li>Find the expense in the expenses list.</li>
+                            <li>Click the <strong>"Edit"</strong> button next to the expense.</li>
+                            <li>Modify any of the expense details (name, cost, deadline, payee, or payers).</li>
+                            <li>Click <strong>"Update Expense"</strong> to save your changes.</li>
+                        </ol>
+                        <p class="mb-0"><strong>Note:</strong> The cost will be automatically divided equally among all selected payers.</p>
+                    </div>
+                </div>
+
+                <!-- Managing Group Members -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Managing Group Members</h2>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="mt-3">Adding Members</h5>
+                        <ol>
+                            <li>Go to the group page where you want to add a member.</li>
+                            <li>Click the <strong>"Add Member"</strong> button.</li>
+                            <li>Enter the <strong>User ID</strong> of the person you want to add.</li>
+                            <li>Click <strong>"Add Member"</strong> to confirm.</li>
+                        </ol>
+
+                        <h5 class="mt-4">Removing Members</h5>
+                        <ol>
+                            <li>Go to the group page where you want to remove a member.</li>
+                            <li>Click the <strong>"Remove Member"</strong> button.</li>
+                            <li>Select the member you want to remove from the list.</li>
+                            <li>Click <strong>"Remove Member"</strong> to confirm.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Searching Expenses -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Searching Your Expenses</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>The Search page allows you to view and search through all expenses you owe money for across all your groups.</p>
+                        <ol>
+                            <li>Click <strong>"Search"</strong> in the navigation bar.</li>
+                            <li>You'll see all expenses you owe money for from every group.</li>
+                            <li>Use the search and filter options:
+                                <ul>
+                                    <li><strong>Search by Name:</strong> Enter an expense name to search for specific expenses</li>
+                                    <li><strong>Filter by Group:</strong> Select a specific group from the dropdown to see only expenses from that group</li>
+                                    <li><strong>Sort By:</strong> Choose how to sort your expenses:
+                                        <ul>
+                                            <li><strong>Closest Due:</strong> Expenses due soonest first</li>
+                                            <li><strong>Farthest Due:</strong> Expenses due latest first</li>
+                                            <li><strong>Lowest Amount:</strong> Expenses with lowest cost first</li>
+                                            <li><strong>Highest Amount:</strong> Expenses with highest cost first</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>Click <strong>"Search"</strong> to apply your filters, or click <strong>"Clear"</strong> to reset.</li>
+                        </ol>
+                        <p class="mb-0"><strong>Tip:</strong> The filters automatically update when you change the dropdown selections. Use this feature to quickly find expenses you need to pay.</p>
+                    </div>
+                </div>
+
+                <!-- Profile Management -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Managing Your Profile</h2>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <li>Click <strong>"Profile"</strong> in the navigation bar.</li>
+                            <li>From your profile page, you can:
+                                <ul>
+                                    <li>Update your first name</li>
+                                    <li>Update your last name</li>
+                                    <li>Change your User ID</li>
+                                    <li>Change your password</li>
+                                </ul>
+                            </li>
+                            <li>Fill in the form for the information you want to change.</li>
+                            <li>Click the corresponding <strong>"Update"</strong> button to save your changes.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Navigation Tips -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Navigation Tips</h2>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Home:</strong> View all your groups and create new ones</li>
+                            <li><strong>Profile:</strong> Manage your account information</li>
+                            <li><strong>Search:</strong> Search and filter all expenses you owe across all groups</li>
+                            <li><strong>Settings:</strong> Access application settings</li>
+                            <li><strong>Instruction Manual:</strong> View this help page (you're here!)</li>
+                        </ul>
+                        <p class="mb-0"><strong>Remember:</strong> You can always return to the home page by clicking "Expense Splitter" in the top-left corner or the "Home" link in the navigation bar.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</main>
+
