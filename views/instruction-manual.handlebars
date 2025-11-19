@@ -85,6 +85,187 @@
                     </div>
                 </div>
 
+                <!-- Editing and Deleting Groups -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Editing and Deleting Groups</h2>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="mt-3">Editing a Group</h5>
+                        <ol>
+                            <li>Navigate to the group page you want to edit.</li>
+                            <li>Click the <strong>"Edit Group"</strong> button.</li>
+                            <li>Modify the group name or description.</li>
+                            <li>Click <strong>"Update Group"</strong> to save your changes.</li>
+                        </ol>
+
+                        <h5 class="mt-4">Deleting a Group</h5>
+                        <ol>
+                            <li>Navigate to the group page you want to delete.</li>
+                            <li>Click the <strong>"Delete Group"</strong> button.</li>
+                            <li>Confirm the deletion when prompted.</li>
+                        </ol>
+                        <p class="mb-0"><strong>Warning:</strong> Deleting a group is permanent. All expenses and group data will be removed. However, change logs for the deleted group will still be visible in the Logs section.</p>
+                    </div>
+                </div>
+
+                <!-- Group Settings and Features -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Group Settings and Features</h2>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="mt-3">Changing Currency</h5>
+                        <ol>
+                            <li>Go to the group page where you want to change the currency.</li>
+                            <li>Click the <strong>"Change Currency"</strong> button.</li>
+                            <li>Select the desired currency from the dropdown menu (USD, EUR, GBP, JPY, CAD, AUD, CHF, CNY, INR, MXN).</li>
+                            <li>Click <strong>"Save Currency"</strong> to confirm.</li>
+                        </ol>
+                        <p class="mb-0"><strong>Note:</strong> When you change the currency, all existing expenses in the group will be converted to the new currency automatically.</p>
+
+                        <h5 class="mt-4">Exporting Expense Report (PDF)</h5>
+                        <ol>
+                            <li>Navigate to the group page.</li>
+                            <li>Click the <strong>"Export PDF"</strong> button.</li>
+                            <li>The PDF will be automatically downloaded to your computer.</li>
+                        </ol>
+                        <p class="mb-0">The PDF includes: group name and description, list of all group members, summary of all expenses with details (cost, deadline, payee, payers), and total expenses amount.</p>
+
+                        <h5 class="mt-4">Viewing Group Balances</h5>
+                        <p>On any group page, you can see:</p>
+                        <ul>
+                            <li><strong>Group Members section:</strong> Shows each member and who they owe money to within that group, along with the amount owed.</li>
+                            <li><strong>Expenses section:</strong> Shows all expenses for the group with details like cost, deadline, payee, and payers.</li>
+                        </ul>
+                        <p class="mb-0"><strong>Tip:</strong> The balances shown reflect the current state of all expenses, including any payments that have been recorded.</p>
+                    </div>
+                </div>
+
+                <!-- Updating Balance and Making Payments -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Updating Balance and Making Payments</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>When you've paid part or all of an expense you owe, you can update your balance:</p>
+                        <ol>
+                            <li>Go to the group page containing the expense.</li>
+                            <li>Find the expense in the expenses list.</li>
+                            <li>If you owe money for this expense, you'll see an <strong>"Update Balance"</strong> button.</li>
+                            <li>Click <strong>"Update Balance"</strong> and enter the amount you've paid.</li>
+                            <li>Click <strong>"Submit Payment"</strong> to record your payment.</li>
+                        </ol>
+                        <p class="mb-0"><strong>Note:</strong> You can make partial payments. The system will track how much you've paid and how much you still owe for each expense. You cannot pay more than the amount you owe.</p>
+                    </div>
+                </div>
+
+                <!-- Viewing Total Balance -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Viewing Your Total Balance</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>To see your overall financial balance across all groups:</p>
+                        <ol>
+                            <li>Click <strong>"Profile"</strong> in the navigation bar.</li>
+                            <li>On your profile page, you'll see:
+                                <ul>
+                                    <li><strong>Total You Owe:</strong> The sum of all money you owe across all your groups</li>
+                                    <li><strong>Total Owed To You:</strong> The sum of all money others owe you across all your groups</li>
+                                </ul>
+                            </li>
+                        </ol>
+                        <p class="mb-0"><strong>Note:</strong> These totals are calculated from all active groups you're a member of and reflect the current state of all expenses and payments.</p>
+                    </div>
+                </div>
+
+                <!-- Change Logs -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Viewing Change Logs</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>The Change Logs feature allows you to see a complete history of all actions taken in your groups, even after groups have been deleted.</p>
+                        
+                        <h5 class="mt-3">Accessing Change Logs</h5>
+                        <ol>
+                            <li>Click <strong>"Logs"</strong> in the navigation bar.</li>
+                            <li>You'll see a list of all your groups (both active and deleted) with status badges.</li>
+                            <li>Use the search bar to find specific groups by name.</li>
+                            <li>Use the status filter to show:
+                                <ul>
+                                    <li><strong>All Groups:</strong> Shows both active and deleted groups</li>
+                                    <li><strong>Active Groups:</strong> Shows only groups that currently exist</li>
+                                    <li><strong>Deleted Groups:</strong> Shows only groups that have been deleted</li>
+                                </ul>
+                            </li>
+                        </ol>
+
+                        <h5 class="mt-4">Viewing Group Expenses</h5>
+                        <ol>
+                            <li>From the Logs page, click <strong>"View Expenses"</strong> on a group.</li>
+                            <li>You'll see all expenses for that group (if the group is deleted, expenses may not be available).</li>
+                            <li>Use the search bar to filter expenses by name.</li>
+                            <li>Use the "Sort By" dropdown to organize expenses:
+                                <ul>
+                                    <li><strong>Closest Due:</strong> Expenses due soonest first</li>
+                                    <li><strong>Farthest Due:</strong> Expenses due latest first</li>
+                                    <li><strong>Lowest Amount:</strong> Expenses with lowest cost first</li>
+                                    <li><strong>Highest Amount:</strong> Expenses with highest cost first</li>
+                                </ul>
+                            </li>
+                        </ol>
+
+                        <h5 class="mt-4">Viewing Group Change Logs</h5>
+                        <ol>
+                            <li>From the Logs page, click on a group and then click <strong>"Show Group Change Logs"</strong>.</li>
+                            <li>You'll see a chronological list of all group-level actions, including:
+                                <ul>
+                                    <li>Group created</li>
+                                    <li>Group edited (name or description changed)</li>
+                                    <li>Group deleted</li>
+                                    <li>Member added</li>
+                                    <li>Member removed</li>
+                                    <li>Currency changed</li>
+                                    <li>Export report generated</li>
+                                </ul>
+                            </li>
+                            <li>Each log entry shows:
+                                <ul>
+                                    <li>The action that was performed</li>
+                                    <li>Who performed it</li>
+                                    <li>When it happened</li>
+                                    <li>Details about what changed (if applicable)</li>
+                                </ul>
+                            </li>
+                        </ol>
+
+                        <h5 class="mt-4">Viewing Expense Change Logs</h5>
+                        <ol>
+                            <li>From the group expenses page, click <strong>"View Change Logs"</strong> on any expense.</li>
+                            <li>You'll see a chronological list of all actions related to that expense, including:
+                                <ul>
+                                    <li>Expense created</li>
+                                    <li>Expense edited (with details of what changed: name, cost, deadline, payee, or payers)</li>
+                                    <li>Expense deleted</li>
+                                    <li>Payment recorded (who paid, how much, remaining balance)</li>
+                                </ul>
+                            </li>
+                            <li>Each log entry shows:
+                                <ul>
+                                    <li>The action that was performed</li>
+                                    <li>Who performed it</li>
+                                    <li>When it happened</li>
+                                    <li>Details about what changed (old values vs new values)</li>
+                                </ul>
+                            </li>
+                        </ol>
+
+                        <p class="mb-0"><strong>Note:</strong> Change logs are visible to all members of a group. Even if a group is deleted, you can still view its change logs in the Logs section. The logs are sorted by most recent first.</p>
+                    </div>
+                </div>
+
                 <!-- Searching Expenses -->
                 <div class="card mb-4">
                     <div class="card-header">
@@ -145,8 +326,9 @@
                     <div class="card-body">
                         <ul>
                             <li><strong>Home:</strong> View all your groups and create new ones</li>
-                            <li><strong>Profile:</strong> Manage your account information</li>
+                            <li><strong>Profile:</strong> Manage your account information and view your total balance (total you owe and total owed to you)</li>
                             <li><strong>Search:</strong> Search and filter all expenses you owe across all groups</li>
+                            <li><strong>Logs:</strong> View change logs for all your groups, including deleted groups. See history of all actions taken in groups and expenses</li>
                             <li><strong>Settings:</strong> Access application settings</li>
                             <li><strong>Instruction Manual:</strong> View this help page (you're here!)</li>
                         </ul>

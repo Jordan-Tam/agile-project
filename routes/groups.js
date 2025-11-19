@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb"
 import groupsData from "../data/groups.js";
 import expensesData from "../data/expenses.js";
 import usersData from "../data/users.js";
+import changeLogsData from "../data/changeLogs.js";
 import { requireAuth } from "../middleware.js";
 import {
 	checkString,
@@ -42,10 +43,37 @@ router
 				});
 			}
 
+			// Create the group first
 			const newGroup = await groupsData.createGroup(
 				groupName,
 				groupDescription
 			);
+
+			// Add the creator as a member so the group shows up in their groups list
+			await groupsData.addMember(newGroup._id, req.session.user.userId);
+
+			// Then log the group creation - now it has at least one member (the creator)
+			try {
+				await changeLogsData.addChangeLogToAllMembers(
+					"group_created",
+					"group",
+					newGroup._id.toString(),
+					newGroup.groupName,
+					null, // expenseId
+					null, // expenseName
+					{
+						userId: req.session.user._id,
+						userName: `${req.session.user.firstName} ${req.session.user.lastName}`
+					},
+					{
+						groupName: newGroup.groupName,
+						groupDescription: newGroup.groupDescription
+					}
+				);
+			} catch (logError) {
+				console.error("Error logging group creation:", logError);
+			}
+
 			const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
 
 			res.render("groups/group", {
@@ -84,6 +112,41 @@ router
 
 		// Call data function to delete expense.
 		try {
+			// Get group and expense info BEFORE deletion
+			const group = await groupsData.getGroupByID(groupId);
+			const expense = group.expenses?.find(exp => exp._id.toString() === expenseId);
+
+			if (expense) {
+				// Get all users for name mapping
+				const allUsers = await usersData.getAllUsers();
+				const userMap = {};
+				allUsers.forEach((user) => {
+					userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
+				});
+
+				// Log expense deletion
+				try {
+					await changeLogsData.addChangeLogToAllMembers(
+						"expense_deleted",
+						"expense",
+						groupId,
+						group.groupName,
+						expenseId,
+						expense.name,
+						{
+							userId: req.session.user._id,
+							userName: `${req.session.user.firstName} ${req.session.user.lastName}`
+						},
+						{
+							cost: expense.cost,
+							deadline: expense.deadline
+						}
+					);
+				} catch (logError) {
+					console.error("Error logging expense deletion:", logError);
+				}
+			}
+
 			return res.json(await expensesData.deleteExpense(groupId, expenseId));
 		} catch (e) {
 			return res.status(500).json({ error: e });
@@ -129,11 +192,45 @@ router
 				});
 			}
 
+			// Get old group data for comparison
+			const oldGroup = await groupsData.getGroupByID(groupId);
+
 			const updatedGroup = await groupsData.updateGroup(
 				groupId,
 				groupName,
 				groupDescription
 			);
+
+			// Determine what changed
+			const changes = {};
+			if (oldGroup.groupName !== groupName) {
+				changes.name = { old: oldGroup.groupName, new: groupName };
+			}
+			if (oldGroup.groupDescription !== groupDescription) {
+				changes.description = { old: oldGroup.groupDescription, new: groupDescription };
+			}
+
+			// Log group edit if something changed
+			if (Object.keys(changes).length > 0) {
+				try {
+					await changeLogsData.addChangeLogToAllMembers(
+						"group_edited",
+						"group",
+						groupId,
+						groupName,
+						null,
+						null,
+						{
+							userId: req.session.user._id,
+							userName: `${req.session.user.firstName} ${req.session.user.lastName}`
+						},
+						{ changes: changes }
+					);
+				} catch (logError) {
+					console.error("Error logging group edit:", logError);
+				}
+			}
+
 			res.redirect(`/groups/${groupId}/`);
 		} catch (e) {
 			try {
@@ -158,6 +255,25 @@ router.route("/:id/export-pdf").get(requireAuth, async (req, res) => {
 	try {
 		const id = checkId(req.params.id);
 		const group = await groupsData.getGroupByID(id);
+
+		// Log export report
+		try {
+			await changeLogsData.addChangeLogToAllMembers(
+				"export_report",
+				"group",
+				id,
+				group.groupName,
+				null,
+				null,
+				{
+					userId: req.session.user._id,
+					userName: `${req.session.user.firstName} ${req.session.user.lastName}`
+				},
+				{}
+			);
+		} catch (logError) {
+			console.error("Error logging export report:", logError);
+		}
 
 		// Get all users to map IDs to names
 		const allUsers = await usersData.getAllUsers();
@@ -485,7 +601,194 @@ router.route("/:id")
 			error: "Group Not Found"
 		});
 	}
-});
+	})
+
+	.delete(requireAuth, async (req, res) => {
+		try {
+			const id = checkId(req.params.id);
+
+			// Get group info BEFORE deletion
+			const group = await groupsData.getGroupByID(id);
+
+			// Mark all logs for this group as deleted
+			try {
+				await changeLogsData.markGroupAsDeleted(id);
+			} catch (logError) {
+				console.error("Error marking group logs as deleted:", logError);
+			}
+
+			// Log group deletion for all members
+			try {
+				const allMemberIds = await changeLogsData.getAllGroupMemberIds(id);
+				const allUsers = await usersData.getAllUsers();
+				const userMap = {};
+				allUsers.forEach((user) => {
+					userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
+				});
+
+				// Prepare expense snapshot - include BOTH active AND deleted expenses
+				// First, get all change logs to find deleted expenses
+				const allLogs = await changeLogsData.getGroupChangeLogsForUser(req.session.user._id, id);
+				
+				// Get all expense_created logs (all expenses ever created)
+				const expenseCreatedLogs = allLogs.filter(log => 
+					log.action === "expense_created" && 
+					log.type === "expense" && 
+					log.expenseId
+				);
+				
+				// Get all expense_deleted logs (to identify deleted expenses)
+				const expenseDeletedLogs = allLogs.filter(log => 
+					log.action === "expense_deleted" && 
+					log.type === "expense" && 
+					log.expenseId
+				);
+				
+				// Create a set of deleted expense IDs
+				const deletedExpenseIds = new Set(
+					expenseDeletedLogs.map(log => {
+						const id = log.expenseId;
+						return typeof id === "object" ? id.toString() : id.toString();
+					})
+				);
+				
+				// Create a set of active expense IDs (from current group)
+				const activeExpenseIds = new Set(
+					(group.expenses || []).map(exp => {
+						const id = exp._id;
+						return typeof id === "object" ? id.toString() : id.toString();
+					})
+				);
+				
+				// Build expense name map from all expense logs
+				const expenseNameMap = new Map();
+				const allExpenseLogs = allLogs.filter(log => 
+					log.type === "expense" && 
+					log.expenseId
+				);
+				
+				for (const log of allExpenseLogs) {
+					const expenseIdStr = typeof log.expenseId === "object" 
+						? log.expenseId.toString() 
+						: log.expenseId.toString();
+					
+					if (!expenseNameMap.has(expenseIdStr)) {
+						let name = null;
+						if (log.expenseName && typeof log.expenseName === "string" && log.expenseName.trim() !== "") {
+							name = log.expenseName.trim();
+						} else if (log.details && log.details.expenseName && typeof log.details.expenseName === "string" && log.details.expenseName.trim() !== "") {
+							name = log.details.expenseName.trim();
+						} else if (log.details && log.details.changes && log.details.changes.name) {
+							if (log.details.changes.name.new && typeof log.details.changes.name.new === "string") {
+								name = log.details.changes.name.new.trim();
+							} else if (log.details.changes.name.old && typeof log.details.changes.name.old === "string") {
+								name = log.details.changes.name.old.trim();
+							}
+						}
+						
+						if (name) {
+							expenseNameMap.set(expenseIdStr, name);
+						}
+					}
+				}
+				
+				// Start with active expenses from group
+				const expenseSnapshot = (group.expenses || []).map(expense => {
+					// Convert payee to name if it's an ObjectId
+					let payeeName = expense.payee;
+					if (expense.payee) {
+						const payeeId = typeof expense.payee === "object" ? expense.payee.toString() : expense.payee.toString();
+						payeeName = userMap[payeeId] || payeeId;
+					}
+					
+					// Convert payers to names
+					const payerNames = (expense.payers || []).map(payerId => {
+						const pid = typeof payerId === "object" ? payerId.toString() : payerId.toString();
+						return userMap[pid] || pid;
+					});
+					
+					return {
+						_id: expense._id.toString(),
+						name: expense.name || "Unknown Expense",
+						cost: expense.cost || 0,
+						deadline: expense.deadline || "",
+						payee: payeeName,
+						payers: payerNames,
+						payments: (expense.payments || []).map(p => ({
+							payer: typeof p.payer === "object" ? p.payer.toString() : p.payer.toString(),
+							paid: p.paid || 0
+						})),
+						isDeleted: false
+					};
+				});
+				
+				// Add deleted expenses that are not in the active group
+				for (const log of expenseCreatedLogs) {
+					const expenseIdStr = typeof log.expenseId === "object" 
+						? log.expenseId.toString() 
+						: log.expenseId.toString();
+					
+					// If this expense was deleted and not in active expenses, add it to snapshot
+					if (deletedExpenseIds.has(expenseIdStr) && !activeExpenseIds.has(expenseIdStr)) {
+						// Reconstruct deleted expense from logs
+						const payeeName = (log.details && log.details.payee) ? log.details.payee : "Unknown";
+						const payerNames = (log.details && Array.isArray(log.details.payers)) ? log.details.payers : [];
+						
+						// Get expense name from map or log
+						let expenseName = "Unknown Expense";
+						if (expenseNameMap.has(expenseIdStr)) {
+							expenseName = expenseNameMap.get(expenseIdStr);
+						} else if (log.details && log.details.expenseName && typeof log.details.expenseName === "string" && log.details.expenseName.trim() !== "") {
+							expenseName = log.details.expenseName.trim();
+						} else if (log.expenseName && typeof log.expenseName === "string" && log.expenseName.trim() !== "") {
+							expenseName = log.expenseName.trim();
+						}
+						
+						expenseSnapshot.push({
+							_id: expenseIdStr,
+							name: expenseName,
+							cost: (log.details && log.details.cost) ? parseFloat(log.details.cost) : 0,
+							deadline: (log.details && log.details.deadline) ? log.details.deadline : "",
+							payee: payeeName,
+							payers: payerNames,
+							payments: [], // Payments not stored in deleted expense logs
+							isDeleted: true
+						});
+					}
+				}
+
+				if (allMemberIds.length > 0) {
+					await changeLogsData.addChangeLog(
+						"group_deleted",
+						"group",
+						id,
+						group.groupName,
+						null,
+						null,
+						{
+							userId: req.session.user._id,
+							userName: `${req.session.user.firstName} ${req.session.user.lastName}`
+						},
+						allMemberIds,
+						{
+							expenses: expenseSnapshot, // Store snapshot of all expenses at time of deletion
+							currency: group.currency || "USD"
+						},
+						"deleted" // Set groupStatus to "deleted" for deletion log
+					);
+				}
+			} catch (logError) {
+				console.error("Error logging group deletion:", logError);
+			}
+
+			// NOW delete the group
+			await groupsData.deleteGroup(id);
+
+			res.redirect("/home");
+		} catch (e) {
+			return res.status(500).json({ error: e.toString() });
+		}
+	});
 
 // Expense routes
 router
@@ -557,6 +860,56 @@ router
 				payee,
 				payers
 			);
+
+			// Get the created expense from the group
+			const group = await groupsData.getGroupByID(groupId);
+			const newExpense = group.expenses.find(exp =>
+				exp.name === name &&
+				exp.cost === cost &&
+				exp.deadline === deadline
+			);
+
+			// Get all users for name mapping
+			const allUsers = await usersData.getAllUsers();
+			const userMap = {};
+			allUsers.forEach((user) => {
+				userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
+			});
+
+			// Get payee name
+			const payeeId = typeof payee === "object" ? payee.toString() : payee.toString();
+			const payeeName = userMap[payeeId] || payee;
+
+			// Log expense creation
+			if (newExpense) {
+				try {
+					await changeLogsData.addChangeLogToAllMembers(
+						"expense_created",
+						"expense",
+						groupId,
+						group.groupName,
+						newExpense._id.toString(),
+						name,
+						{
+							userId: req.session.user._id,
+							userName: `${req.session.user.firstName} ${req.session.user.lastName}`
+						},
+						{
+							expenseName: name, // Also store in details for consistency with seed.js
+							cost: cost,
+							deadline: deadline,
+							payee: payeeName,
+							payers: payers.map(p => {
+								const pid = typeof p === "object" ? p.toString() : p.toString();
+								return userMap[pid] || p;
+							})
+						}
+					);
+				} catch (logError) {
+					console.error("Error logging expense creation:", logError);
+				}
+			}
+
 			res.redirect(`/groups/${groupId}/`);
 		} catch (e) {
 			let group;
@@ -713,6 +1066,17 @@ router
 			return res.status(500).json({ error: e.toString() });
 		}
 
+		// Get group and expense for comparison BEFORE editing
+		const group = await groupsData.getGroupByID(groupId);
+		const oldExpense = group.expenses.find(exp => exp._id.toString() === expenseId);
+
+		// Get all users for name mapping
+		const allUsers = await usersData.getAllUsers();
+		const userMap = {};
+		allUsers.forEach((user) => {
+			userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
+		});
+
 		// Call data function to edit the expense.
 		try {
 			const updatedExpense = await expensesData.editExpense(
@@ -724,6 +1088,59 @@ router
 				payee,
 				payers
 			);
+
+			// Determine what changed
+			const changes = {};
+			if (oldExpense.name !== name) {
+				changes.name = { old: oldExpense.name, new: name };
+			}
+			if (oldExpense.cost !== cost) {
+				changes.cost = { old: oldExpense.cost, new: cost };
+			}
+			if (oldExpense.deadline !== deadline) {
+				changes.deadline = { old: oldExpense.deadline, new: deadline };
+			}
+
+			const oldPayeeId = typeof oldExpense.payee === "object" ? oldExpense.payee.toString() : oldExpense.payee.toString();
+			const newPayeeId = typeof payee === "object" ? payee.toString() : payee.toString();
+			if (oldPayeeId !== newPayeeId) {
+				changes.payee = {
+					old: userMap[oldPayeeId] || oldPayeeId,
+					new: userMap[newPayeeId] || newPayeeId
+				};
+			}
+
+			// Check if payers changed
+			const oldPayers = oldExpense.payers.map(p => typeof p === "object" ? p.toString() : p.toString()).sort();
+			const newPayers = payers.map(p => typeof p === "object" ? p.toString() : p.toString()).sort();
+			if (JSON.stringify(oldPayers) !== JSON.stringify(newPayers)) {
+				changes.payers = {
+					old: oldPayers.map(p => userMap[p] || p),
+					new: newPayers.map(p => userMap[p] || p)
+				};
+			}
+
+			// Log expense edit if something changed
+			if (Object.keys(changes).length > 0) {
+				try {
+					await changeLogsData.addChangeLogToAllMembers(
+						"expense_edited",
+						"expense",
+						groupId,
+						group.groupName,
+						expenseId,
+						name,
+						{
+							userId: req.session.user._id,
+							userName: `${req.session.user.firstName} ${req.session.user.lastName}`
+						},
+						{ changes: changes }
+					);
+				} catch (logError) {
+					console.error("Error logging expense edit:", logError);
+				}
+			}
+
 			return res.json(updatedExpense);
 		} catch (e) {
 			return res.status(500).json({ error: e });
@@ -769,6 +1186,47 @@ router
 		// Call data function to add the member
 		try {
 			const updatedGroup = await groupsData.addMember(groupId, user_id);
+
+			// Get all users for name mapping
+			const allUsers = await usersData.getAllUsers();
+			const userMap = {};
+			allUsers.forEach((user) => {
+				userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
+			});
+
+			// Find the added user
+			const addedUser = allUsers.find(u => u.userId.toString() === user_id.toString());
+			const addedUserName = addedUser ? `${addedUser.firstName} ${addedUser.lastName}` : user_id;
+
+			// Get group info
+			const group = await groupsData.getGroupByID(groupId);
+
+			// Log member added
+			try {
+				await changeLogsData.addChangeLogToAllMembers(
+					"member_added",
+					"group",
+					groupId,
+					group.groupName,
+					null,
+					null,
+					{
+						userId: req.session.user._id,
+						userName: `${req.session.user.firstName} ${req.session.user.lastName}`
+					},
+					{
+						memberId: addedUser ? addedUser._id.toString() : user_id,
+						memberName: addedUserName
+					}
+				);
+
+				// Update visibleTo for all existing logs of this group (add new member)
+				const allMemberIds = await changeLogsData.getAllGroupMemberIds(groupId);
+				await changeLogsData.updateVisibleToForGroup(groupId, allMemberIds);
+			} catch (logError) {
+				console.error("Error logging member added:", logError);
+			}
+
 			res.redirect(`/groups/${groupId}/`);
 		} catch (e) {
 			const group = await groupsData.getGroupByID(groupId);
@@ -833,7 +1291,48 @@ router
 
 		// Call data function to remove member
 		try {
+			// Get all users for name mapping BEFORE removal
+			const allUsers = await usersData.getAllUsers();
+			const userMap = {};
+			allUsers.forEach((user) => {
+				userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
+			});
+
+			// Find the removed user
+			const removedUser = allUsers.find(u => u._id.toString() === user_id.toString());
+			const removedUserName = removedUser ? `${removedUser.firstName} ${removedUser.lastName}` : user_id;
+
 			const updatedGroup = await groupsData.removeMember(groupId, user_id);
+
+			// Get group info
+			const updatedGroupData = await groupsData.getGroupByID(groupId);
+
+			// Log member removed
+			try {
+				await changeLogsData.addChangeLogToAllMembers(
+					"member_removed",
+					"group",
+					groupId,
+					updatedGroupData.groupName,
+					null,
+					null,
+					{
+						userId: req.session.user._id,
+						userName: `${req.session.user.firstName} ${req.session.user.lastName}`
+					},
+					{
+						memberId: removedUser ? removedUser._id.toString() : user_id,
+						memberName: removedUserName
+					}
+				);
+
+				// Update visibleTo for all existing logs of this group (remove deleted member)
+				const allMemberIds = await changeLogsData.getAllGroupMemberIds(groupId);
+				await changeLogsData.updateVisibleToForGroup(groupId, allMemberIds);
+			} catch (logError) {
+				console.error("Error logging member removed:", logError);
+			}
+
 			res.redirect(`/groups/${groupId}/`);
 		} catch (e) {
 			return res.status(400).render("groups/removeMember", {
@@ -857,7 +1356,33 @@ router
         return res.status(400).json({ error: "Currency is required" });
       }
 
+      // Get old group data for comparison
+      const group = await groupsData.getGroupByID(groupId);
+      const oldCurrency = group.currency || "USD";
+
       const updatedGroup = await groupsData.updateCurrency(groupId, currency);
+
+      // Log currency change
+      try {
+        await changeLogsData.addChangeLogToAllMembers(
+          "currency_changed",
+          "group",
+          groupId,
+          group.groupName,
+          null,
+          null,
+          {
+            userId: req.session.user._id,
+            userName: `${req.session.user.firstName} ${req.session.user.lastName}`
+          },
+          {
+            oldCurrency: oldCurrency,
+            newCurrency: currency
+          }
+        );
+      } catch (logError) {
+        console.error("Error logging currency change:", logError);
+      }
 
       res.json({
         success: true,
@@ -937,6 +1462,43 @@ router
 
       // Record the payment via the expenses data module
       const updatedExpense = await expensesData.addPayment(groupId, expenseId, payerId, paymentAmount);
+
+      // Log payment recorded
+      if (updatedExpense && expense) {
+        try {
+          // Get payment info
+          const payments = updatedExpense.payments || [];
+          const paymentEntry = payments.find(p => {
+            const pid = typeof p.payer === "object" ? p.payer.toString() : p.payer.toString();
+            return pid === payerId;
+          });
+
+          const totalPaid = paymentEntry ? paymentEntry.paid : 0;
+          const amountPerPayer = expense.cost / expense.payers.length;
+          const remainingOwed = Math.max(0, amountPerPayer - totalPaid);
+
+          await changeLogsData.addChangeLogToAllMembers(
+            "payment_recorded",
+            "expense",
+            groupId,
+            group.groupName,
+            expenseId,
+            expense.name,
+            {
+              userId: req.session.user._id,
+              userName: `${req.session.user.firstName} ${req.session.user.lastName}`
+            },
+            {
+              paymentAmount: paymentAmount,
+              totalPaid: totalPaid,
+              remainingOwed: remainingOwed,
+              amountPerPayer: amountPerPayer
+            }
+          );
+        } catch (logError) {
+          console.error("Error logging payment recorded:", logError);
+        }
+      }
 
       return res.json({
         success: true,

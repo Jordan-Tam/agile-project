@@ -74,7 +74,11 @@ app.engine(
       },
 			concat: function (str1, str2) {
 				return str1 + str2;
-        
+			},
+			formatDate: function (dateString) {
+				if (!dateString) return "";
+				const date = new Date(dateString);
+				return date.toLocaleString();
 			}
 		}
 	})

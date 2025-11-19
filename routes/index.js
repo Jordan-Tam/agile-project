@@ -4,6 +4,7 @@ import signoutRoutes from "./signout.js";
 import groupRoutes from "./groups.js";
 import searchRoutes from "./search.js";
 import profileRoutes from "./profile.js";
+import logsRoutes from "./logs.js";
 import groupsData from "../data/groups.js";
 import {
   rewriteUnsupportedBrowserMethods,
@@ -44,6 +45,7 @@ const constructorMethod = (app) => {
   app.use("/signout", signoutRoutes);
   app.use("/groups", rewriteUnsupportedBrowserMethods, groupRoutes);
   app.use("/search", searchRoutes);
+  app.use("/logs", requireAuth, logsRoutes);
 
   app.use(/(.*)/, (req, res) => {
     res.status(404).json({ error: "Not found" });

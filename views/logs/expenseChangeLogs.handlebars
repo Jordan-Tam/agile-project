@@ -1,0 +1,94 @@
+{{> header}}
+<div class="container-fluid">
+    <div class="mb-3">
+        <a href="/logs/{{group._id}}" class="btn btn-secondary mb-3">← Back to Expenses</a>
+        {{#ifEquals groupStatus "deleted"}}
+            <span class="badge bg-danger ms-2">This group has been deleted</span>
+        {{/ifEquals}}
+    </div>
+
+    <h1 class="mb-3">Expense Change Logs - {{expenseName}}</h1>
+
+    {{#if expense}}
+        <div class="mb-4 p-3 bg-light rounded">
+            <h4>Current Expense Details</h4>
+            <p class="mb-1"><strong>Name:</strong> {{expense.name}}</p>
+            <p class="mb-1"><strong>Cost:</strong> {{formatCurrency expense.cost group.currency}}</p>
+            <p class="mb-1"><strong>Deadline:</strong> {{expense.deadline}}</p>
+        </div>
+    {{/if}}
+
+    <!-- Change Logs List -->
+    <div class="mt-4">
+        {{#if hasLogs}}
+            <h2 class="mb-3">Change Logs ({{logs.length}})</h2>
+            <div class="change-logs-list">
+                {{#each logs}}
+                    <div class="change-log-item mb-3 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="mb-0">{{this.action}}</h5>
+                            <span class="text-muted small">{{formatDate this.timestamp}}</span>
+                        </div>
+                        <p class="mb-1"><strong>Performed by:</strong> {{this.performedBy.userName}}</p>
+                        
+                        {{#if this.details}}
+                            {{#if this.details.changes}}
+                                <div class="mt-2">
+                                    <strong>Changes:</strong>
+                                    <ul class="mb-0">
+                                        {{#each this.details.changes}}
+                                            <li>
+                                                <strong>{{@key}}:</strong> 
+                                                {{#if this.old}}
+                                                    Changed from "{{this.old}}" to "{{this.new}}"
+                                                {{else}}
+                                                    {{this}}
+                                                {{/if}}
+                                            </li>
+                                        {{/each}}
+                                    </ul>
+                                </div>
+                            {{else}}
+                                {{#if this.details.cost}}
+                                    <p class="mb-1"><strong>Cost:</strong> {{formatCurrency this.details.cost ../group.currency}}</p>
+                                {{/if}}
+                                {{#if this.details.deadline}}
+                                    <p class="mb-1"><strong>Deadline:</strong> {{this.details.deadline}}</p>
+                                {{/if}}
+                                {{#if this.details.payee}}
+                                    <p class="mb-1"><strong>Payee:</strong> {{this.details.payee}}</p>
+                                {{/if}}
+                                {{#if this.details.payers}}
+                                    <p class="mb-1"><strong>Payers:</strong> {{#each this.details.payers}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+                                {{/if}}
+                                {{#if this.details.paymentAmount}}
+                                    <p class="mb-1"><strong>Payment Amount:</strong> {{formatCurrency this.details.paymentAmount ../group.currency}}</p>
+                                {{/if}}
+                                {{#if this.details.totalPaid}}
+                                    <p class="mb-1"><strong>Total Paid:</strong> {{formatCurrency this.details.totalPaid ../group.currency}}</p>
+                                {{/if}}
+                                {{#if this.details.remainingOwed}}
+                                    <p class="mb-1"><strong>Remaining Owed:</strong> {{formatCurrency this.details.remainingOwed ../group.currency}}</p>
+                                {{/if}}
+                            {{/if}}
+                        {{/if}}
+                    </div>
+                {{/each}}
+            </div>
+        {{else}}
+            <div class="alert alert-info">
+                <h4>No change logs found</h4>
+                <p>There are no change logs for this expense yet.</p>
+            </div>
+        {{/if}}
+    </div>
+</div>
+
+<script>
+    // Helper function to format date (in case it's not available in handlebars)
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    }
+</script>
+
