@@ -41,6 +41,11 @@
       <button type="submit">Edit Group</button>
     </form>
 
+    <form action="/groups/{{group._id}}" method="post" style="display:inline;">
+        <input type="hidden" name="_method" value="DELETE">
+        <button type="submit">Delete Group</button>
+    </form>
+
     <button type="button" id="changeCurrencyBtn">Change Currency</button>
     <form action="/groups/{{group._id}}/export-pdf" method="get" style="display:inline;">
       <button type="submit" class="btn-export">Export PDF</button>

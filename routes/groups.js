@@ -312,96 +312,163 @@ router.route("/:id/export-pdf").get(requireAuth, async (req, res) => {
 	}
 });
 
-router.route("/:id").get(requireAuth, async (req, res) => {
-	try {
-		const id = checkId(req.params.id);
-		const group = await groupsData.getGroupByID(id);
-		const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
+router.route("/:id")
 
-		// Get all users to map IDs to names
-		const allUsers = await usersData.getAllUsers();
-		const userMap = {};
-		allUsers.forEach((user) => {
-			userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
-		});
+	.get(requireAuth, async (req, res) => {
+		try {
+			const id = checkId(req.params.id);
+			const group = await groupsData.getGroupByID(id);
+			const allGroups = await groupsData.getGroupsForUser(req.session.user._id);
 
-		// Format expenses for display with user names
-		const expenses = group.expenses || [];
-		const formattedExpenses = expenses.map((expense) => {
-			// Get payee name
-			const payeeName = userMap[expense.payee] || expense.payee;
+			// Get all users to map IDs to names
+			const allUsers = await usersData.getAllUsers();
+			const userMap = {};
+			allUsers.forEach((user) => {
+				userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
+			});
 
-			// Get payer names
-			const payerNames = expense.payers.map(
-				(payerId) => userMap[payerId] || payerId
-			);
+			// Format expenses for display with user names
+			const expenses = group.expenses || [];
+			const formattedExpenses = expenses.map((expense) => {
+				// Get payee name
+				const payeeName = userMap[expense.payee] || expense.payee;
 
-			return {
-				_id: expense._id.toString(),
-				name: expense.name,
-				cost: expense.cost.toFixed(2),
-				deadline: expense.deadline,
-				payee: expense.payee,
-				payeeName: payeeName,
-				payers: expense.payers,
-				payerNames: payerNames
-			};
-		});
+				// Get payer names
+				const payerNames = expense.payers.map(
+					(payerId) => userMap[payerId] || payerId
+				);
 
-		// Calculate balances (who owes whom)
-		const balances = await groupsData.calculateGroupBalances(id);
+				return {
+					_id: expense._id.toString(),
+					name: expense.name,
+					cost: expense.cost.toFixed(2),
+					deadline: expense.deadline,
+					payee: expense.payee,
+					payeeName: payeeName,
+					payers: expense.payers,
+					payerNames: payerNames
+				};
+			});
 
-		// Debug: Log the raw balances
-		console.log("Raw balances:", JSON.stringify(balances, null, 2));
+			// Calculate balances (who owes whom)
+			const balances = await groupsData.calculateGroupBalances(id);
 
-		// Format balances with names for display
-		const formattedBalances = {};
-		for (const debtorId of Object.keys(balances)) {
-			const debtorName = userMap[debtorId] || debtorId;
-			formattedBalances[debtorId] = {
-				debtorName: debtorName,
-				owes: []
-			};
+			// Debug: Log the raw balances
+			// console.log("Raw balances:", JSON.stringify(balances, null, 2));
 
-			for (const creditorId of Object.keys(balances[debtorId])) {
-				const creditorName = userMap[creditorId] || creditorId;
-				const amount = balances[debtorId][creditorId];
-				formattedBalances[debtorId].owes.push({
-					creditorId: creditorId,
-					creditorName: creditorName,
-					amount: amount
-				});
+			// Format balances with names for display
+			const formattedBalances = {};
+			for (const debtorId of Object.keys(balances)) {
+				const debtorName = userMap[debtorId] || debtorId;
+				formattedBalances[debtorId] = {
+					debtorName: debtorName,
+					owes: []
+				};
+
+				for (const creditorId of Object.keys(balances[debtorId])) {
+					const creditorName = userMap[creditorId] || creditorId;
+					const amount = balances[debtorId][creditorId];
+					formattedBalances[debtorId].owes.push({
+						creditorId: creditorId,
+						creditorName: creditorName,
+						amount: amount
+					});
+				}
 			}
+
+			// Debug: Log formatted balances
+			/* console.log(
+				"Formatted balances:",
+				JSON.stringify(formattedBalances, null, 2)
+			);
+			console.log(
+				"Group members:",
+				group.groupMembers.map((m) => `${m.firstName} ${m.lastName} (${m._id})`)
+			); */
+
+			return res.render("groups/group", {
+				group: group,
+				group_id: id,
+				group_name: group.groupName,
+				group_description: group.groupDescription,
+				groupMembers: group.groupMembers,
+				groups: allGroups,
+				expenses: formattedExpenses,
+				hasExpenses: formattedExpenses.length > 0,
+				balances: formattedBalances,
+				stylesheet: "/public/css/styles.css"
+			});
+		} catch (e) {
+			return res.status(404).render("error", {
+				error: "Group Not Found"
+			});
+		}
+	})
+
+	.delete(requireAuth, async (req, res) => {
+
+		console.log("DELETE");
+
+		let id = req.params.id;
+		let group = undefined;
+		let allGroups = undefined;
+
+		// Input validation.
+		try {
+			id = checkId(req.params.id);
+		} catch (e) {
+			console.log(e);
+			return res.status(400).render("error", {
+				error: "Invalid group ID."
+			});
 		}
 
-		// Debug: Log formatted balances
-		console.log(
-			"Formatted balances:",
-			JSON.stringify(formattedBalances, null, 2)
-		);
-		console.log(
-			"Group members:",
-			group.groupMembers.map((m) => `${m.firstName} ${m.lastName} (${m._id})`)
-		);
+		// Check if the group exists.
+		try {
+			group = await groupsData.getGroupByID(id);
+		} catch (e) {
+			console.log(e);
+			return res.status(404).render("error", {
+				error: "Group Not Found."
+			});
+		}
 
-		return res.render("groups/group", {
-			group: group,
-			group_id: id,
-			group_name: group.groupName,
-			group_description: group.groupDescription,
-			groupMembers: group.groupMembers,
-			groups: allGroups,
-			expenses: formattedExpenses,
-			hasExpenses: formattedExpenses.length > 0,
-			balances: formattedBalances,
-			stylesheet: "/public/css/styles.css"
-		});
-	} catch (e) {
-		return res.status(404).render("error", {
-			error: "Group Not Found"
-		});
-	}
-});
+		// Make sure the user is a member of the group being deleted.
+		try {
+			allGroups = await groupsData.getGroupsForUser(req.session.user._id);
+			for (let i = 0; i < allGroups.length; i++) {
+
+			}
+		} catch (e) {
+			console.log(e);
+			return res.status(403).render("error", {
+				error: "Forbidden"
+			});
+		}
+
+		// Delete the group.
+		try {
+			await groupsData.deleteGroup(id);
+		} catch (e) {
+			console.log(e);
+			return res.status(500).render("groups/group", {
+				group: group,
+				group_id: id,
+				group_name: group.groupName,
+				group_description: group.groupDescription,
+				groupMembers: group.groupMembers,
+				groups: allGroups,
+				expenses: formattedExpenses,
+				hasExpenses: formattedExpenses.length > 0,
+				balances: formattedBalances,
+				stylesheet: "/public/css/styles.css",
+				error: "Group could not be deleted."
+			});
+		}
+
+		res.redirect("/home");
+
+	})
 
 // Expense routes
 router

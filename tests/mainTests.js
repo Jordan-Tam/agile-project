@@ -12,6 +12,7 @@ import { runPdfExportTests } from "./pdfExportTests.js";
 import { runBalanceTests } from "./balanceTests.js";
 import { runChangeUserIDAndPasswordTests } from "./changeUserIDAndPasswordTests.js";
 import { runCurrencyConverterTests } from "./currencyConverterTests.js";
+import { runDeleteGroupTests } from "./deleteGroupTests.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -179,6 +180,9 @@ async function run() {
 		console.log("\n=== Running Currency Converter Tests ===");
 		const currencySummary = await runCurrencyConverterTests();
 
+		console.log("\n=== Running Delete Group Tests ===");
+		await runDeleteGroupTests();
+
 		// Run the inline group data tests
 		//await runInlineGroupTests();
 
@@ -199,6 +203,7 @@ async function run() {
 		console.log(
 			`Currency Converter tests -> total: ${currencySummary.total}, failed: ${currencySummary.failed}`
 		);
+		console.log("Delete Group tests -> see above logs");
 		console.log("Inline group data tests -> see above logs");
 	} catch (err) {
 		console.error("Error running tests:", err);
