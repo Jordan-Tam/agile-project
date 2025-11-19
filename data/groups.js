@@ -144,21 +144,34 @@ const exportedMethods = {
 		return this.getGroupByID(groupId);
 	},
 
+	async deleteGroup(groupId) {
+
+		// Input validation.
+		groupId = checkId(groupId);
+
+		// User documents do not store the groups they are a member of, so there is no need to update the user documents when removing a group.
+		
+		// Delete the group document.
+		const groupsCollection = await groups();
+		const deletionInfo = await groupsCollection.findOneAndDelete({
+			_id: new ObjectId(groupId)
+		});
+		if (!deletionInfo) {
+			throw "Group could not be deleted.";
+		}
+
+		return true;
+
+	},
+
 	// Add a member to a group
 	async addMember(groupId, /*  first_name, last_name, */ user_id) {
 		groupId = checkId(groupId);
-		//first_name = checkString(first_name);
-		//last_name = checkString(last_name);
 		user_id = checkUserId(user_id);
 
 		// Find the user from users data
 		const userList = await user.getAllUsers(); // returns array
-		const theUser = userList.find(
-			(u) =>
-				/* u.firstName === first_name &&
-				u.lastName === last_name && */
-				u.userId.toString() === user_id
-		);
+		const theUser = userList.find((u) => u.userId.toString() === user_id);
 
 		if (!theUser) throw "No user found with these credentials";
 
@@ -304,13 +317,13 @@ const exportedMethods = {
 		// Get the group with all its data
 		const group = await this.getGroupByID(groupId);
 
-		console.log("=== calculateGroupBalances DEBUG ===");
-		console.log("Group ID:", groupId);
-		console.log("Number of expenses:", group.expenses?.length || 0);
+		// console.log("=== calculateGroupBalances DEBUG ===");
+		// console.log("Group ID:", groupId);
+		// console.log("Number of expenses:", group.expenses?.length || 0);
 
 		if (!group.expenses || group.expenses.length === 0) {
 			// No expenses, no debts
-			console.log("No expenses found, returning empty balances");
+			// console.log("No expenses found, returning empty balances");
 			return {};
 		}
 
@@ -319,7 +332,7 @@ const exportedMethods = {
 
 		// Process each expense
 		for (const expense of group.expenses) {
-			console.log("\nProcessing expense:", expense.name);
+			// console.log("\nProcessing expense:", expense.name);
 			const payeeId =
 				typeof expense.payee === "object"
 					? expense.payee.toString()
@@ -328,26 +341,26 @@ const exportedMethods = {
 			const numPayers = expense.payers.length;
 			const amountPerPayer = cost / numPayers;
 
-			console.log("  Payee ID:", payeeId);
-			console.log("  Cost:", cost);
-			console.log(
+			// console.log("  Payee ID:", payeeId);
+			// console.log("  Cost:", cost);
+			/* console.log(
 				"  Payers:",
 				expense.payers.map((p) =>
 					typeof p === "object" ? p.toString() : p.toString()
 				)
-			);
-			console.log("  Amount per payer:", amountPerPayer);
+			); */
+			// console.log("  Amount per payer:", amountPerPayer);
 
 			// Each payer owes the payee their share
 			for (const payer of expense.payers) {
 				const payerId =
 					typeof payer === "object" ? payer.toString() : payer.toString();
 
-				console.log("  Processing payer:", payerId);
+				// console.log("  Processing payer:", payerId);
 
 				// Skip if payer is the same as payee (they don't owe themselves)
 				if (payerId === payeeId) {
-					console.log("    Skipping - payer is payee");
+					// console.log("    Skipping - payer is payee");
 					continue;
 				}
 
