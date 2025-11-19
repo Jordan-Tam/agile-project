@@ -15,22 +15,51 @@ const router = Router();
 // Profile view page - shows user info and groups
 router.get("/", requireAuth, async (req, res) => {
     try {
-        // Get user's groups
-        const userGroups = await groupsData.getGroupsForUser(req.session.user._id);
+        const userId = req.session.user._id.toString();
+        const userGroups = await groupsData.getGroupsForUser(userId);
 
-        // Check for success message from redirect
-        const success = req.query.success === 'true' ? 'Profile updated successfully!' : null;
+        let totalOwes = 0; // total the user owes
+        let totalOwedTo = 0; // total owed to the user
+
+        for (const group of userGroups) {
+            const balances = await groupsData.calculateGroupBalances(group._id);
+
+            // Sum balance user owes others
+            if (balances[userId]) {
+                for (const creditorId of Object.keys(balances[userId])) {
+                    totalOwes += balances[userId][creditorId];
+                }
+            }
+
+            // Sum balance others owe the user
+            for (const debtorId of Object.keys(balances)) {
+                if (balances[debtorId][userId]) {
+                    totalOwedTo += balances[debtorId][userId];
+                }
+            }
+        }
+
+        totalOwes = Number(totalOwes.toFixed(2));
+        totalOwedTo = Number(totalOwedTo.toFixed(2));
+
+        const success = req.query.success === 'true'
+            ? 'Profile updated successfully!'
+            : null;
 
         res.render("profileView", {
             user: req.session.user,
             userGroups: userGroups,
-            success: success
+            totalOwes,
+            totalOwedTo,
+            success
         });
     } catch (e) {
         console.error("Error loading profile:", e);
         res.render("profileView", {
             user: req.session.user,
-            userGroups: []
+            userGroups: [],
+            totalOwes: 0,
+            totalOwedTo: 0
         });
     }
 });
