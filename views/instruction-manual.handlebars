@@ -23,7 +23,6 @@
                             </li>
                             <li>Click <strong>"Create Group"</strong> to finish.</li>
                         </ol>
-                        <p class="mb-0"><strong>Tip:</strong> After creating a group, you can add members, create expenses, and manage group settings.</p>
                     </div>
                 </div>
 
@@ -49,15 +48,32 @@
                             <li>Click <strong>"Create Expense"</strong> to save.</li>
                         </ol>
 
+                        <h5 class="mt-4">Viewing Expense Details</h5>
+                        <ol>
+                            <li>Go to the group page containing the expense you want to view.</li>
+                            <li>Find the expense in the expenses list.</li>
+                            <li>Click the <strong>"View Details"</strong> button next to the expense.</li>
+                            <li>A modal will open showing all expense details including: name, cost, deadline, payee, and who owes what amount.</li>
+                            <li>From this modal, you can click <strong>"Edit Expense"</strong> to modify the expense, or <strong>"Update Balance"</strong> to record a payment (if you owe money for this expense).</li>
+                        </ol>
+
                         <h5 class="mt-4">Editing an Expense</h5>
                         <ol>
                             <li>Go to the group page containing the expense you want to edit.</li>
                             <li>Find the expense in the expenses list.</li>
-                            <li>Click the <strong>"Edit"</strong> button next to the expense.</li>
+                            <li>Click the <strong>"View Details"</strong> button and then click <strong>"Edit Expense"</strong> in the modal, or click the <strong>"Edit"</strong> button directly next to the expense.</li>
                             <li>Modify any of the expense details (name, cost, deadline, payee, or payers).</li>
                             <li>Click <strong>"Update Expense"</strong> to save your changes.</li>
                         </ol>
-                        <p class="mb-0"><strong>Note:</strong> The cost will be automatically divided equally among all selected payers.</p>
+
+                        <h5 class="mt-4">Deleting an Expense</h5>
+                        <ol>
+                            <li>Go to the group page containing the expense you want to delete.</li>
+                            <li>Find the expense in the expenses list.</li>
+                            <li>Click the <strong>"Delete"</strong> button next to the expense.</li>
+                            <li>Confirm the deletion when prompted.</li>
+                        </ol>
+                        <p class="mb-0"><strong>Note:</strong> The cost will be automatically divided equally among all selected payers. Deleted expenses will still be visible in the change logs, even after the expense is removed from the active group.</p>
                     </div>
                 </div>
 
@@ -205,7 +221,13 @@
                         <h5 class="mt-4">Viewing Group Expenses</h5>
                         <ol>
                             <li>From the Logs page, click <strong>"View Expenses"</strong> on a group.</li>
-                            <li>You'll see all expenses for that group (if the group is deleted, expenses may not be available).</li>
+                            <li>You'll see all expenses for that group, including:
+                                <ul>
+                                    <li>Active expenses currently in the group</li>
+                                    <li>Deleted expenses that were removed from the group (marked with a "Deleted" badge)</li>
+                                </ul>
+                            </li>
+                            <li><strong>Note:</strong> Even if a group has been deleted, you can still see all its expenses (both active and deleted) in the Logs section. Deleted expenses are preserved with all their details.</li>
                             <li>Use the search bar to filter expenses by name.</li>
                             <li>Use the "Sort By" dropdown to organize expenses:
                                 <ul>
@@ -262,7 +284,7 @@
                             </li>
                         </ol>
 
-                        <p class="mb-0"><strong>Note:</strong> Change logs are visible to all members of a group. Even if a group is deleted, you can still view its change logs in the Logs section. The logs are sorted by most recent first.</p>
+                        <p class="mb-0"><strong>Note:</strong> Change logs are visible to all members of a group. Even if a group is deleted, you can still view its change logs in the Logs section. Deleted expenses are also visible in the change logs and on the group expenses page (marked with a "Deleted" badge). The logs are sorted by most recent first.</p>
                     </div>
                 </div>
 
@@ -310,10 +332,12 @@
                                     <li>Update your last name</li>
                                     <li>Change your User ID</li>
                                     <li>Change your password</li>
+                                    <li>Sign out of your account</li>
                                 </ul>
                             </li>
                             <li>Fill in the form for the information you want to change.</li>
                             <li>Click the corresponding <strong>"Update"</strong> button to save your changes.</li>
+                            <li>To sign out, click the <strong>"Sign Out"</strong> button on your profile page.</li>
                         </ol>
                     </div>
                 </div>
