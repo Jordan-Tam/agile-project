@@ -1,5 +1,6 @@
 import express from "express";
 import { groups } from "../config/mongoCollections.js";
+import { ObjectId } from "mongodb"
 import groupsData from "../data/groups.js";
 import expensesData from "../data/expenses.js";
 import usersData from "../data/users.js";
@@ -229,7 +230,58 @@ router.route("/:id/export-pdf").get(requireAuth, async (req, res) => {
 		doc.fontSize(16).font("Helvetica-Bold").text("Expenses Summary");
 		doc.moveDown(0.5);
 
-		const expenses = group.expenses || [];
+		// inside router.route("/:id").get(...)
+        // Format expenses for display with user names
+        const expenses = group.expenses || [];
+
+		const formattedExpenses = expenses.map((expense) => {
+			const payeeName = userMap[expense.payee] || expense.payee;
+			const payerNames = expense.payers.map(
+				(payerId) => userMap[payerId] || payerId
+			);
+
+			const amountPerPayer = parseFloat((expense.cost / expense.payers.length).toFixed(2));
+
+			// Build payments lookup
+			const paymentsLookup = {};
+			(expense.payments || []).forEach(p => {
+				const pid = (typeof p.payer === 'object') ? p.payer.toString() : p.payer;
+				paymentsLookup[pid] = parseFloat(Number(p.paid || 0).toFixed(2));
+			});
+
+			// Build payerShares (array of {_id, name, owed})
+			const payerShares = expense.payers.map(payerId => {
+				const idStr = (typeof payerId === 'object') ? payerId.toString() : payerId;
+				const name = userMap[idStr] || idStr;
+				const paidSoFar = paymentsLookup[idStr] || 0;
+				const owed = parseFloat(Math.max(0, amountPerPayer - paidSoFar).toFixed(2));
+				return { _id: idStr, name, owed };
+			});
+
+			// Amount current user owes
+			const currentUserId = req.session.user._id.toString();
+			let amountOwedForCurrentUser = 0;
+			if (expense.payers.map(p => (typeof p === 'object' ? p.toString() : p.toString())).includes(currentUserId)) {
+				const paid = paymentsLookup[currentUserId] || 0;
+				amountOwedForCurrentUser = parseFloat(Math.max(0, amountPerPayer - paid).toFixed(2));
+			}
+
+			return {
+				_id: expense._id.toString(),
+				name: expense.name,
+				cost: parseFloat(Number(expense.cost).toFixed(2)),
+				deadline: expense.deadline,
+				payee: expense.payee,
+				payeeName,
+				payers: expense.payers,
+				payerNames,
+				amountPerPayer,
+				numPayers: expense.payers.length,
+				payerShares,              
+				amountOwedForCurrentUser   
+			};
+			});
+
 
 		if (expenses.length === 0) {
 			doc
@@ -328,25 +380,53 @@ router.route("/:id").get(requireAuth, async (req, res) => {
 		// Format expenses for display with user names
 		const expenses = group.expenses || [];
 		const formattedExpenses = expenses.map((expense) => {
-			// Get payee name
-			const payeeName = userMap[expense.payee] || expense.payee;
+		const payeeName = userMap[expense.payee] || expense.payee;
+		const payerNames = expense.payers.map(
+			(payerId) => userMap[payerId] || payerId
+		);
 
-			// Get payer names
-			const payerNames = expense.payers.map(
-				(payerId) => userMap[payerId] || payerId
-			);
+		const amountPerPayer = parseFloat((expense.cost / expense.payers.length).toFixed(2));
 
-			return {
-				_id: expense._id.toString(),
-				name: expense.name,
-				cost: expense.cost.toFixed(2),
-				deadline: expense.deadline,
-				payee: expense.payee,
-				payeeName: payeeName,
-				payers: expense.payers,
-				payerNames: payerNames
-			};
+		// Build payments lookup
+		const paymentsLookup = {};
+		(expense.payments || []).forEach(p => {
+			const pid = typeof p.payer === "object" ? p.payer.toString() : p.payer;
+			paymentsLookup[pid] = parseFloat(Number(p.paid || 0).toFixed(2));
 		});
+
+		// Build payerShares
+		const payerShares = expense.payers.map(payerId => {
+			const idStr = typeof payerId === "object" ? payerId.toString() : payerId;
+			const name = userMap[idStr] || idStr;
+			const paidSoFar = paymentsLookup[idStr] || 0;
+			const owed = parseFloat(Math.max(0, amountPerPayer - paidSoFar).toFixed(2));
+			return { _id: idStr, name, owed };
+		});
+
+		// Calculate current user owed
+		const currentUserId = req.session.user._id.toString();
+		let amountOwedForCurrentUser = 0;
+		if (expense.payers.map(p => (typeof p === "object" ? p.toString() : p.toString())).includes(currentUserId)) {
+			const paid = paymentsLookup[currentUserId] || 0;
+			amountOwedForCurrentUser = parseFloat(Math.max(0, amountPerPayer - paid).toFixed(2));
+		}
+
+		return {
+			_id: expense._id.toString(),
+			name: expense.name,
+			cost: parseFloat(Number(expense.cost).toFixed(2)),
+			deadline: expense.deadline,
+			payee: expense.payee,
+			payeeName,
+			payers: expense.payers,
+			payerNames,
+			amountPerPayer,
+			numPayers: expense.payers.length,
+			payerShares,               // REQUIRED for modal display
+			amountOwedForCurrentUser   // REQUIRED to enable “Update Balance” button
+		};
+	});
+
 
 		// Calculate balances (who owes whom)
 		const balances = await groupsData.calculateGroupBalances(id);
@@ -394,7 +474,9 @@ router.route("/:id").get(requireAuth, async (req, res) => {
 			expenses: formattedExpenses,
 			hasExpenses: formattedExpenses.length > 0,
 			balances: formattedBalances,
+			currentUserId: req.session.user._id,
 			stylesheet: "/public/css/styles.css"
+
 		});
 	} catch (e) {
 		return res.status(404).render("error", {
@@ -798,5 +880,69 @@ router.route("/").get(requireAuth, async (req, res) => {
 		res.status(500).render("error", { error: e.toString() });
 	}
 });
+// Update balance route
+router
+  .route("/:groupId/updateBalance")
+  .post(requireAuth, async (req, res) => {
+    try {
+      const groupId = checkId(req.params.groupId, "Group ID", "POST /:groupId/updateBalance");
+      let { expenseId, paymentAmount } = req.body;
 
+      if (!expenseId || paymentAmount === undefined || paymentAmount === null) {
+        return res.status(400).json({ error: "Missing expenseId or paymentAmount" });
+      }
+
+      // Coerce types
+      paymentAmount = parseFloat(paymentAmount);
+      if (isNaN(paymentAmount) || paymentAmount < 0) {
+        return res.status(400).json({ error: "Invalid payment amount" });
+      }
+
+      // Use the logged-in user as the payer
+      const payerId = req.session.user._id.toString();
+
+      // Fetch group and expense to validate bounds
+      const group = await groupsData.getGroupByID(groupId);
+      const expense = (group.expenses || []).find(exp => exp._id.toString() === expenseId);
+
+      if (!expense) {
+        return res.status(404).json({ error: "Expense not found" });
+      }
+
+      // Ensure payer is actually a payer in this expense
+      const payerIds = expense.payers.map(p => (typeof p === 'object' ? p.toString() : p.toString()));
+      if (!payerIds.includes(payerId)) {
+        return res.status(403).json({ error: "You are not a payer for this expense" });
+      }
+
+      const numPayers = expense.payers.length;
+      const amountPerPayer = parseFloat((expense.cost / numPayers).toFixed(2));
+
+      // Find already paid for this payer
+      const paymentsLookup = {};
+      (expense.payments || []).forEach(p => {
+        const pid = (typeof p.payer === 'object') ? p.payer.toString() : p.payer;
+        paymentsLookup[pid] = parseFloat(Number(p.paid || 0).toFixed(2));
+      });
+      const alreadyPaid = paymentsLookup[payerId] || 0;
+      const remaining = parseFloat((amountPerPayer - alreadyPaid).toFixed(2));
+      if (remaining <= 0) {
+        return res.status(400).json({ error: "Nothing left to pay for this expense" });
+      }
+      if (paymentAmount > remaining) {
+        return res.status(400).json({ error: `Payment amount cannot exceed remaining owed ${remaining}` });
+      }
+
+      // Record the payment via the expenses data module
+      const updatedExpense = await expensesData.addPayment(groupId, expenseId, payerId, paymentAmount);
+
+      return res.json({
+        success: true,
+        message: "Payment recorded",
+        updatedExpense
+      });
+    } catch (e) {
+      return res.status(500).json({ error: e.toString() });
+    }
+  });
 export default router;

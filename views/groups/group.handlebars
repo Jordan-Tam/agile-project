@@ -83,7 +83,7 @@
                   <div class="expense-item">
                       <div class="expense-info">
                           <h3>{{this.name}}</h3>
-                          <p class="expense-cost">{{formatCurrency this.cost ../group.currency}}</p>
+                          <p class="expense-cost">{{formatCurrency this.cost group.currency}}</p>
                           <p class="expense-deadline">Due: {{this.deadline}}</p>
                       </div>
                     <div class="expense-actions">
@@ -93,9 +93,23 @@
                                 data-expense-cost="{{this.cost}}"
                                 data-expense-deadline="{{this.deadline}}"
                                 data-expense-payee="{{this.payeeName}}"
-                                data-expense-payers="{{json this.payerNames}}">
+                                data-expense-payers='{{{json this.payerShares}}}'
+                                data-amount-per-payer="{{this.amountPerPayer}}">
                             View Details
                         </button>
+                        <!-- NEW: Update Balance button visible only if current user owes > 0 -->
+                        {{#ifEquals ../currentUserId ""}} 
+                        <!-- no-op: if no currentUserId -->
+                        {{else}}
+                        {{!-- find if amountOwedForCurrentUser > 0 --}} 
+                        {{#if this.amountOwedForCurrentUser}}
+                            <button class="btn btn-warning update-balance-btn"
+                                    data-expense-id="{{this._id}}"
+                                    data-owed="{{this.amountOwedForCurrentUser}}">
+                            Update Balance
+                            </button>
+                        {{/if}}
+                        {{/ifEquals}}
                         <button class="btn btn-danger delete-expense-btn" 
                                 data-expense-id="{{this._id}}"
                                 data-group-id="{{../group_id}}">
@@ -120,11 +134,12 @@
             <p><strong>Cost:</strong> <span id="modal-cost" data-currency-display></span></p>
             <p><strong>Deadline:</strong> <span id="modal-deadline"></span></p>
             <p><strong>Payee:</strong> <span id="modal-payee"></span></p>
-            <p><strong>Payers:</strong></p>
+            <p><strong>Payers & Amount Owed:</strong></p>
             <ul id="modal-payers"></ul>
         </div>
         <div class="modal-actions">
             <button id="editExpenseBtn" class="btn btn-primary">Edit Expense</button>
+            <button id="updateBalanceBtn" class="btn btn-success">Update Balance</button>
         </div>
       </div>
   </div>
@@ -155,8 +170,24 @@
           </form>
       </div>
   </div>
+  <!-- Update Balance Modal -->
+  <div id="balanceModal" class="modal">
+      <div class="modal-content">
+          <span class="close-balance">&times;</span>
+          <h2>Update Balance</h2>
+          <div id="balanceModalBody">
+              <p>You owe: <span id="balance-owed"></span></p>
+              <label for="paymentAmount">Payment Amount:</label>
+              <input type="number" id="paymentAmount" min="0" step="0.01" placeholder="0.00">
+              <p id="balanceError" class="error" style="display:none;"></p>
+          </div>
+          <div class="modal-actions">
+              <button id="submitPaymentBtn" class="btn btn-primary">Submit Payment</button>
+              <button id="cancelBalanceBtn" class="btn btn-secondary">Cancel</button>
+          </div>
+      </div>
+  </div>
   {{/if}}
-
   <script>
       // Currency formatting helper
       const currencySymbols = {
@@ -206,52 +237,92 @@
       const viewDetailsBtns = document.querySelectorAll('.view-details-btn');
       let currentExpenseId = null;
 
-      viewDetailsBtns.forEach(btn => {
-          btn.addEventListener('click', function() {
-              currentExpenseId = this.getAttribute('data-expense-id');
-              const name = this.getAttribute('data-expense-name');
-              const cost = this.getAttribute('data-expense-cost');
-              const deadline = this.getAttribute('data-expense-deadline');
-              const payee = this.getAttribute('data-expense-payee');
-              const payers = JSON.parse(this.getAttribute('data-expense-payers'));
+    viewDetailsBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentExpenseId = this.getAttribute('data-expense-id');
+            const name = this.getAttribute('data-expense-name');
+            const cost = this.getAttribute('data-expense-cost');
+            const deadline = this.getAttribute('data-expense-deadline');
+            const payee = this.getAttribute('data-expense-payee');
 
-              document.getElementById('modal-name').textContent = name;
+            // Parse payers JSON safely (we wrapped JSON in single quotes in the template)
+            let payers = [];
+            try {
+                const raw = this.getAttribute('data-expense-payers') || '[]';
+                payers = JSON.parse(raw);
+            } catch (err) {
+                // Fallback: try splitting as array of names (backwards compatibility)
+                const raw = this.getAttribute('data-expense-payers') || '[]';
+                try {
+                    payers = JSON.parse(raw.replace(/'/g, '"'));
+                } catch (e) {
+                    payers = [];
+                }
+            }
 
-              const modalCostEl = document.getElementById('modal-cost');
-              modalCostEl.dataset.rawCost = cost;
-              modalCostEl.textContent = formatCurrency(cost, currentCurrency);
+    // amountPerPayer may be present as numeric string
+    const amountPerPayerAttr = this.getAttribute('data-amount-per-payer');
+    const amountPerPayer = amountPerPayerAttr ? Number(amountPerPayerAttr) : undefined;
 
-              document.getElementById('modal-deadline').textContent = deadline;
-              document.getElementById('modal-payee').textContent = payee;
+    document.getElementById('modal-name').textContent = name;
 
-              const payersList = document.getElementById('modal-payers');
-              payersList.innerHTML = '';
-              payers.forEach(payer => {
-                  const li = document.createElement('li');
-                  li.textContent = payer;
-                  payersList.appendChild(li);
-              });
+    const modalCostEl = document.getElementById('modal-cost');
+    modalCostEl.dataset.rawCost = cost;
+    modalCostEl.textContent = formatCurrency(cost, currentCurrency);
 
-              modal.style.display = 'block';
-          });
-      });
+    document.getElementById('modal-deadline').textContent = deadline;
+    document.getElementById('modal-payee').textContent = payee;
 
-      // Edit expense button handler
-      document.getElementById('editExpenseBtn').addEventListener('click', function() {
-          if (currentExpenseId) {
-              window.location.href = `/groups/{{group_id}}/expense/${currentExpenseId}/edit`;
-          }
-      });
+    const payersList = document.getElementById('modal-payers');
+    payersList.innerHTML = '';
 
-      closeBtn.addEventListener('click', function() {
-          modal.style.display = 'none';
-      });
+    // payer can be either a string (older code) or object { _id, name, owed }
+    payers.forEach(payer => {
+        const li = document.createElement('li');
+        let payerName = '';
+        let owedAmount = undefined;
 
-      window.addEventListener('click', function(event) {
-          if (event.target === modal) {
-              modal.style.display = 'none';
-          }
-      });
+        if (typeof payer === 'string') {
+            payerName = payer;
+            owedAmount = amountPerPayer;
+        } else if (payer && typeof payer === 'object') {
+            // support both {name, owed} and {payer, paid, ...}
+            payerName = payer.name || payer.payer || payer.user || JSON.stringify(payer);
+            owedAmount = (payer.owed !== undefined) ? Number(payer.owed) : amountPerPayer;
+        } else {
+            payerName = String(payer);
+            owedAmount = amountPerPayer;
+        }
+
+        // If we don't know owedAmount, show just name
+        if (owedAmount === undefined || isNaN(owedAmount)) {
+            li.textContent = payerName;
+        } else {
+            li.textContent = `${payerName}: ${formatCurrency(owedAmount, currentCurrency)}`;
+        }
+        payersList.appendChild(li);
+    });
+
+    modal.style.display = 'block';
+});
+});
+
+    // Edit expense button handler
+    document.getElementById('editExpenseBtn').addEventListener('click', function() {
+        if (currentExpenseId) {
+            window.location.href = `/groups/{{group_id}}/expense/${currentExpenseId}/edit`;
+        }
+    });
+
+    closeBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
 
       // Delete expense functionality
       const deleteExpenseBtns = document.querySelectorAll('.delete-expense-btn');
@@ -285,6 +356,61 @@
               }
           });
       });
+      // Add after deleteExpenseBtns code block
+
+    // Update Balance button handlers (on expense cards)
+    const updateBalanceBtns = document.querySelectorAll('.update-balance-btn');
+    updateBalanceBtns.forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const expenseId = this.getAttribute('data-expense-id');
+            const owedStr = this.getAttribute('data-owed');
+            const owed = Number(owedStr);
+
+            if (isNaN(owed) || owed <= 0) {
+                alert('You do not owe anything for this expense.');
+                return;
+            }
+
+            // Ask the user for a payment amount. Using prompt for quick UI; you can replace with a modal.
+            let input = prompt(`Enter payment amount between 0 and ${formatCurrency(owed, currentCurrency)}`, owed.toFixed(2));
+            if (input === null) return; // user cancelled
+
+            // Clean input
+            input = input.replace(/[^0-9.\-]/g, '').trim();
+            const paymentAmount = parseFloat(input.trim());
+            if (isNaN(paymentAmount)) {
+                alert('Invalid amount entered');
+                return;
+            }
+            if (paymentAmount < 0) {
+                alert('Payment cannot be negative');
+                return;
+            }
+            if (paymentAmount > owed + 0.0001) {
+                alert(`Payment cannot exceed ${formatCurrency(owed, currentCurrency)}`);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/groups/{{group._id}}/updateBalance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expenseId, paymentAmount })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Reload to reflect new balances and amounts
+                    window.location.reload();
+                } else {
+                    const err = await response.json();
+                    alert('Error: ' + (err.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Error updating balance: ' + e.message);
+            }
+        });
+    });
 
       // Currency modal functionality
       const currencyModal = document.getElementById('currencyModal');
@@ -346,8 +472,98 @@
               }
           });
       }
+      // Balance update modal functionality
+      const balanceModal = document.getElementById('balanceModal');
+      const closeBalanceBtn = document.querySelector('.close-balance');
+      const updateBalanceBtn = document.getElementById('updateBalanceBtn');
+      const cancelBalanceBtn = document.getElementById('cancelBalanceBtn');
+      const submitPaymentBtn = document.getElementById('submitPaymentBtn');
+      const paymentAmountInput = document.getElementById('paymentAmount');
+      const balanceError = document.getElementById('balanceError');
+      
+      let currentPayee = null;
+      let currentAmountOwed = null;
 
-      // Initialize currency displays on page load
-      updateAllCurrencyDisplays();
+      updateBalanceBtn.addEventListener('click', function() {
+          // Get the payee from the modal
+          currentPayee = document.getElementById('modal-payee').textContent;
+          currentAmountOwed = parseFloat(
+              document.getElementById('modal-cost').textContent.replace(/[^0-9.]/g, '')
+          );
+
+          // Clear previous values
+          paymentAmountInput.value = '';
+          balanceError.style.display = 'none';
+          document.getElementById('balance-owed').textContent = formatCurrency(currentAmountOwed, currentCurrency);
+
+          modal.style.display = 'none';
+          balanceModal.style.display = 'block';
+      });
+
+      closeBalanceBtn.addEventListener('click', function() {
+          balanceModal.style.display = 'none';
+      });
+
+      cancelBalanceBtn.addEventListener('click', function() {
+          balanceModal.style.display = 'none';
+      });
+
+      window.addEventListener('click', function(event) {
+          if (event.target === balanceModal) {
+              balanceModal.style.display = 'none';
+          }
+      });
+
+      submitPaymentBtn.addEventListener('click', async function() {
+          const paymentAmount = parseFloat(paymentAmountInput.value);
+
+          // Validation
+          if (isNaN(paymentAmount)) {
+              balanceError.textContent = 'Please enter a valid amount';
+              balanceError.style.display = 'block';
+              return;
+          }
+
+          if (paymentAmount < 0) {
+              balanceError.textContent = 'Payment amount cannot be negative';
+              balanceError.style.display = 'block';
+              return;
+          }
+
+          if (paymentAmount > currentAmountOwed) {
+              balanceError.textContent = `Payment cannot exceed ${formatCurrency(currentAmountOwed, currentCurrency)}`;
+              balanceError.style.display = 'block';
+              return;
+          }
+
+          try {
+              const response = await fetch(`/groups/{{group._id}}/updateBalance`, {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                      expenseId: currentExpenseId,
+                      paymentAmount: paymentAmount
+                  })
+              });
+
+              if (response.ok) {
+                  const data = await response.json();
+                  balanceModal.style.display = 'none';
+                  alert('Balance updated successfully!');
+                  window.location.reload();
+              } else {
+                  const error = await response.json();
+                  balanceError.textContent = error.error || 'Error updating balance';
+                  balanceError.style.display = 'block';
+              }
+          } catch (error) {
+              balanceError.textContent = 'Error updating balance: ' + error.message;
+              balanceError.style.display = 'block';
+          }
+      });
+    // Initialize currency displays on page load
+    updateAllCurrencyDisplays();
   </script>
 </div>

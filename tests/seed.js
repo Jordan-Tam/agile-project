@@ -4,7 +4,8 @@ import groupsData from "../data/groups.js";
 import expensesData from "../data/expenses.js";
 
 export async function seed() {
-    const db = await dbConnection();
+    try{
+        const db = await dbConnection();
     await db.dropDatabase();
 
     //! CREATE USERS
@@ -83,6 +84,10 @@ export async function seed() {
     console.log("Done seeding database.");
 
     await closeConnection();
+    }catch(e){
+        console.log(e);
+    }
+    
 
 }
 
