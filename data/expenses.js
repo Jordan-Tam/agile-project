@@ -123,14 +123,14 @@ const exportedMethods = {
 
     // Add to the group's expenses array
     const groupsCollection = await groups();
-    console.log("About to insert expense:", JSON.stringify(newExpense, null, 2));
-    console.log("Group members:", JSON.stringify(groupDoc.groupMembers, null, 2));
+    //console.log("About to insert expense:", JSON.stringify(newExpense, null, 2));
+    //console.log("Group members:", JSON.stringify(groupDoc.groupMembers, null, 2));
     const updateResult = await groupsCollection.findOneAndUpdate(
       { _id: new ObjectId(group) },
       { $push: { expenses: newExpense } },
       { returnDocument: "after", returnOriginal: false}
     );
-    console.log("Update result:", updateResult); // Add this debug line
+    //console.log("Update result:", updateResult); // Add this debug line
     if (!updateResult) throw "Error: Failed to insert expense.";
 
     // Return the inserted expense document

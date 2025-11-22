@@ -60,7 +60,11 @@
             <div class="row mt-4">
                 <div class="col">
                     <a href="/profile/edit" class="btn btn-primary me-2">Edit Profile</a>
-                    <a href="/signout" class="btn btn-danger">Sign Out</a>
+                    <a href="/signout" class="btn btn-warning me-2">Sign Out</a>
+                    <form action="/profile" method="POST" style="display:inline;">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button class="btn btn-danger me-2" type="submit">Delete Account</button>
+                    </form>
                 </div>
             </div>
         </div>

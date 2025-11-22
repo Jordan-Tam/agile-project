@@ -15,6 +15,7 @@ import { runCurrencyConverterTests } from "./currencyConverterTests.js";
 import { runDeleteGroupTests } from "./deleteGroupTests.js";
 import { runUpdateBalanceTests } from "./updateBalanceTests.js";
 import { runChangeLogsTests } from "./changeLogsTests.js";
+import { runDeleteUserTests } from "./deleteUserTests.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -190,6 +191,9 @@ async function run() {
 
 		console.log("\n=== Running Change Logs Tests ===");
 		await runChangeLogsTests();
+
+		console.log("\n=== Running Delete User Tests ===");
+		await runDeleteUserTests();
 
 		// Run the inline group data tests
 		//await runInlineGroupTests();
