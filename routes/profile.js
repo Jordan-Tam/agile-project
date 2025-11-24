@@ -13,7 +13,9 @@ import {
 const router = Router();
 
 // Profile view page - shows user info and groups
-router.get("/", requireAuth, async (req, res) => {
+router
+
+.get("/", requireAuth, async (req, res) => {
     try {
         const userId = req.session.user._id.toString();
         const userGroups = await groupsData.getGroupsForUser(userId);
@@ -61,6 +63,18 @@ router.get("/", requireAuth, async (req, res) => {
             totalOwes: 0,
             totalOwedTo: 0
         });
+    }
+})
+
+.delete("/", requireAuth, async (req, res) => {
+    console.log("inside DELETE /profile");
+    try {
+        await usersData.deleteUser(req.session.user._id);
+        req.session.destroy();
+        res.redirect("/login");
+    } catch (e) {
+        console.log(e);
+        res.redirect("/profile");
     }
 });
 

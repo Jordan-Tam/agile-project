@@ -93,6 +93,7 @@ const exportedMethods = {
 		const newGroup = {
 			groupName,
 			groupDescription,
+			expenses: [],
 			currency: "USD" // Default currency for new groups
 		};
 
@@ -233,6 +234,40 @@ const exportedMethods = {
 		if (updateResult.modifiedCount === 0)
 			throw "Error: Could not remove member from the group";
 
+		// === Update expenses to account for removal of member ===
+		// TODO: For each expense, if the deleted user's ObjectID is in the "payers" array field, remove it.
+		// TODO: For each expense, loop through the "payments" array field, if the deleted user's ObjectID is in the "payer" field, remove it.
+		// TODO: For the deleteUser function, just call this function for every group that the user is in.
+		console.log(group);
+		let groupExpenses = group.expenses;
+		let newGroupExpenses = [];
+		for (let i = 0; i < groupExpenses.length; i++) {
+			let temp = groupExpenses[i];
+			if (temp.payee.toString() === user_id.toString()) {
+				continue;
+			}
+			for (let j = 0; j < temp.payers.length; j++) {
+				if (temp.payers[j].toString() === user_id.toString()) {
+					temp.payers.splice(j, 1);
+				}
+			}
+			for (let j = 0; j < temp.payments.length; j++) {
+				if (temp.payments[i].payer.toString() === user_id.toString()) {
+					temp.payments.splice(j, 1);
+				}
+			}
+			newGroupExpenses.push(temp);
+		}
+		const updateGroupObject = {
+			expenses: newGroupExpenses
+		};
+		const updateInfo = await groupCollection.findOneAndUpdate(
+			{_id: new ObjectId(groupId)},
+			{$set: updateGroupObject},
+			{returDocument: "after"}
+		);
+
+
 		// === Return the updated group (with stringified IDs) ===
 		const updatedGroup = await groupCollection.findOne({ _id: groupObjectId });
 		if (!updatedGroup) throw "Error: Group not found after removing member";
@@ -318,13 +353,13 @@ const exportedMethods = {
         // Get the group with all its data
         const group = await this.getGroupByID(groupId);
 
-        console.log("=== calculateGroupBalances DEBUG ===");
-        console.log("Group ID:", groupId);
-        console.log("Number of expenses:", group.expenses?.length || 0);
+        //console.log("=== calculateGroupBalances DEBUG ===");
+        //console.log("Group ID:", groupId);
+        //console.log("Number of expenses:", group.expenses?.length || 0);
 
         if (!group.expenses || group.expenses.length === 0) {
             // No expenses, no debts
-            console.log("No expenses found, returning empty balances");
+            //console.log("No expenses found, returning empty balances");
             return {};
         }
 
@@ -333,7 +368,7 @@ const exportedMethods = {
 
         // Process each expense
         for (const expense of group.expenses) {
-            console.log("\nProcessing expense:", expense.name);
+            //console.log("\nProcessing expense:", expense.name);
             const payeeId =
                 typeof expense.payee === "object"
                     ? expense.payee.toString()
@@ -350,13 +385,13 @@ const exportedMethods = {
                 paymentsLookup[pid] = parseFloat(Number(p.paid || 0).toFixed(2));
             });
 
-            console.log("  Payee ID:", payeeId);
-            console.log("  Cost:", cost);
-            console.log(
+            //console.log("  Payee ID:", payeeId);
+            //console.log("  Cost:", cost);
+            /* console.log(
                 "  Payers:",
                 expense.payers.map((p) => (typeof p === "object" ? p.toString() : p.toString()))
-            );
-            console.log("  Amount per payer:", amountPerPayer);
+            ); */
+            //console.log("  Amount per payer:", amountPerPayer);
 
             // Each payer owes the payee their share minus any payments they've already made
             for (const payer of expense.payers) {
@@ -364,13 +399,13 @@ const exportedMethods = {
 
                 // Skip if payer is the same as payee (they don't owe themselves)
                 if (payerId === payeeId) {
-                    console.log("    Skipping - payer is payee");
+                    //console.log("    Skipping - payer is payee");
                     continue;
                 }
 
                 const paidSoFar = paymentsLookup[payerId] || 0;
                 const owedForThisExpense = parseFloat((amountPerPayer - paidSoFar).toFixed(2));
-                console.log(`    Payer ${payerId} already paid ${paidSoFar}, owes ${owedForThisExpense}`);
+                //console.log(`    Payer ${payerId} already paid ${paidSoFar}, owes ${owedForThisExpense}`);
 
                 // If nothing owed, skip
                 if (owedForThisExpense <= 0) {

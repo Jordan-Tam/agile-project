@@ -1,5 +1,6 @@
 import {ObjectId} from "mongodb";
 import { users as usersCollection } from "../config/mongoCollections.js";
+import groupsData from "./groups.js";
 import bcrypt from "bcryptjs";
 import {
 	checkId,
@@ -280,6 +281,36 @@ const exportedMethods = {
 		updateInfo._id = updateInfo._id.toString();
 
 		return updateInfo;
+
+	},
+
+	async deleteUser(id) {
+
+		// Basic input validation.
+		console.log("hi")
+		id = checkId(id, "User MongoDB ObjectID", "deleteUser");
+		console.log("bye")
+
+		// Check if user exists.
+		await this.getUserById(id);
+
+		// Remove all mention of the user from every group they were in.
+		let groupsList = await groupsData.getGroupsForUser(id);
+		for (let i = 0; i < groupsList.length; i++) {
+			await groupsData.removeMember(groupsList[i]._id.toString(), id.toString());
+		}
+
+		// Delete the user document.
+		const users = await usersCollection();
+		const deletionInfo = await users.findOneAndDelete({
+			_id: new ObjectId(id)
+		});
+		if (!deletionInfo) {
+			throw "User could not be deleted.";
+		}
+
+
+		return true;
 
 	}
 
