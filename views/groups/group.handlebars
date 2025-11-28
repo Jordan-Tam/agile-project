@@ -123,6 +123,11 @@
                             </button>
                         {{/if}}
                         {{/ifEquals}}
+                        <button class="btn btn-success archive-expense-btn" 
+                                data-expense-id="{{this._id}}"
+                                data-group-id="{{../group_id}}">
+                            Archive
+                        </button>
                         <button class="btn btn-danger delete-expense-btn" 
                                 data-expense-id="{{this._id}}"
                                 data-group-id="{{../group_id}}">
@@ -594,6 +599,39 @@
               balanceError.style.display = 'block';
           }
       });
+
+      // Archive expense functionality
+      const archiveExpenseBtns = document.querySelectorAll('.archive-expense-btn');
+      archiveExpenseBtns.forEach(btn => {
+          btn.addEventListener('click', async function(event) {
+              event.stopPropagation();
+              const expenseId = this.getAttribute('data-expense-id');
+              const groupId = this.getAttribute('data-group-id');
+
+              if (confirm('Are you sure you want to archive this expense? You can view it later in the Logs section.')) {
+                  try {
+                      const response = await fetch(`/groups/${groupId}/${expenseId}/archive`, {
+                          method: 'POST',
+                          headers: {
+                              'Content-Type': 'application/json'
+                          }
+                      });
+
+                      if (response.ok) {
+                          alert('Expense archived successfully!');
+                          window.location.reload();
+                      } else {
+                          const data = await response.json();
+                          alert('Error: ' + (data.error || 'Failed to archive expense'));
+                      }
+                  } catch (error) {
+                      console.error('Error archiving expense:', error);
+                      alert('An error occurred while archiving the expense');
+                  }
+              }
+          });
+      });
+
     // Initialize currency displays on page load
     updateAllCurrencyDisplays();
   </script>
