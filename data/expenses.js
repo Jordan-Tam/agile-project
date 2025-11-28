@@ -72,7 +72,7 @@ const exportedMethods = {
     const updatedExpense = (updatedGroup.expenses || []).find(e => e._id.toString() === expenseId);
     return updatedExpense;
   },
-  async createExpense(group, name, cost, deadline, payee, payers) {
+  async createExpense(group, name, cost, deadline, payee, payers, fileInfo = null) {
     // Input validation
     group = checkId(group.toString(), "Group", "createExpense");
     name = checkString(name, "Name", "createExpense");
@@ -121,6 +121,17 @@ const exportedMethods = {
       }))
     };
 
+    // Add file info if provided
+    if (fileInfo) {
+      newExpense.file = {
+        filename: fileInfo.filename,
+        originalName: fileInfo.originalName,
+        mimetype: fileInfo.mimetype,
+        size: fileInfo.size,
+        uploadDate: new Date()
+      };
+    }
+
     // Add to the group's expenses array
     const groupsCollection = await groups();
     //console.log("About to insert expense:", JSON.stringify(newExpense, null, 2));
@@ -165,6 +176,9 @@ const exportedMethods = {
     // Get the group associated with the given ID.
     let group = await groupsData.getGroupByID(groupId);
 
+    // Find the expense to get file info before deletion
+    const expense = group.expenses?.find(exp => exp._id.toString() === expenseId);
+    
     // Remove the expense from the group.
     const deleteInfo = await groupsCollection.findOneAndUpdate(
       { _id: new ObjectId(group._id) },
@@ -177,8 +191,8 @@ const exportedMethods = {
       throw "Could not delete expense.";
     }
 
-    // Return the returned document.
-    return deleteInfo;
+    // Return the expense info (including file info if it exists) along with the group
+    return { group: deleteInfo, deletedExpense: expense };
   },
 
   // Edit Expense

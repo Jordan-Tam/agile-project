@@ -20,7 +20,7 @@
 		</div>
 	{{/if}}
 
-    <form method="POST" action="/groups/{{groupId}}/expense/new" id="login-form">
+    <form method="POST" action="/groups/{{groupId}}/expense/new" id="login-form" enctype="multipart/form-data">
         <div class="custom-card form-floating mb-3">
             <input
                 class="form-control"
@@ -57,6 +57,17 @@
                 required
             />
             <label for="deadline">Deadline</label>
+        </div>
+        <div class="custom-card mb-3">
+            <label for="expenseFile" class="form-label">Attach Receipt/File (Optional)</label>
+            <input
+                class="form-control"
+                type="file"
+                id="expenseFile"
+                name="expenseFile"
+                accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+            />
+            <small class="form-text text-muted">Max file size: 5MB. Allowed: Images, PDFs, Office documents</small>
         </div>
         <p>Payee:</p>
         {{#each group.groupMembers}}

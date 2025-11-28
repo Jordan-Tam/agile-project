@@ -90,6 +90,12 @@
                           <h3>{{this.name}}</h3>
                           <p class="expense-cost">{{formatCurrency this.cost group.currency}}</p>
                           <p class="expense-deadline">Due: {{this.deadline}}</p>
+                          {{#if this.file}}
+                              <p class="expense-file">
+                                  📎 <a href="/groups/{{../group_id}}/expense/{{this._id}}/file" target="_blank">{{this.file.originalName}}</a>
+                                  <small>({{this.file.size}} bytes)</small>
+                              </p>
+                          {{/if}}
                       </div>
                     <div class="expense-actions">
                         <button class="btn btn-info view-details-btn" 
@@ -99,7 +105,9 @@
                                 data-expense-deadline="{{this.deadline}}"
                                 data-expense-payee="{{this.payeeName}}"
                                 data-expense-payers='{{{json this.payerShares}}}'
-                                data-amount-per-payer="{{this.amountPerPayer}}">
+                                data-amount-per-payer="{{this.amountPerPayer}}"
+                                data-has-file="{{#if this.file}}true{{else}}false{{/if}}"
+                                data-file-name="{{this.file.originalName}}">
                             View Details
                         </button>
                         <!-- NEW: Update Balance button visible only if current user owes > 0 -->
@@ -139,6 +147,12 @@
             <p><strong>Cost:</strong> <span id="modal-cost" data-currency-display></span></p>
             <p><strong>Deadline:</strong> <span id="modal-deadline"></span></p>
             <p><strong>Payee:</strong> <span id="modal-payee"></span></p>
+            <p id="modal-file-section" style="display:none;">
+                <strong>Attachment:</strong> 
+                <a id="modal-file-link" href="#" target="_blank">
+                    📎 <span id="modal-file-name"></span>
+                </a>
+            </p>
             <p><strong>Payers & Amount Owed:</strong></p>
             <ul id="modal-payers"></ul>
         </div>
@@ -249,6 +263,8 @@
             const cost = this.getAttribute('data-expense-cost');
             const deadline = this.getAttribute('data-expense-deadline');
             const payee = this.getAttribute('data-expense-payee');
+            const hasFile = this.getAttribute('data-has-file') === 'true';
+            const fileName = this.getAttribute('data-file-name');
 
             // Parse payers JSON safely (we wrapped JSON in single quotes in the template)
             let payers = [];
@@ -277,6 +293,16 @@
 
     document.getElementById('modal-deadline').textContent = deadline;
     document.getElementById('modal-payee').textContent = payee;
+
+    // Handle file display
+    const fileSection = document.getElementById('modal-file-section');
+    if (hasFile && fileName) {
+        document.getElementById('modal-file-name').textContent = fileName;
+        document.getElementById('modal-file-link').href = `/groups/{{group_id}}/expense/${currentExpenseId}/file`;
+        fileSection.style.display = 'block';
+    } else {
+        fileSection.style.display = 'none';
+    }
 
     const payersList = document.getElementById('modal-payers');
     payersList.innerHTML = '';
