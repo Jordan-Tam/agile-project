@@ -57,10 +57,13 @@
             <h3 class="mb-3">Expenses ({{expenses.length}})</h3>
             <div class="expenses-list">
                 {{#each expenses}}
-                    <div class="expense-item mb-3 p-3 border rounded {{#if this.isDeleted}}opacity-75 border-danger{{/if}}" style="{{#if this.isDeleted}}opacity: 0.7;{{/if}}">
+                    <div class="expense-item mb-3 p-3 border rounded {{#if this.isDeleted}}opacity-75 border-danger{{/if}} {{#if this.archived}}opacity-75 border-warning{{/if}}" style="{{#if this.isDeleted}}opacity: 0.7;{{/if}} {{#if this.archived}}opacity: 0.8;{{/if}}">
                         <div class="expense-info">
                             {{#if this.isDeleted}}
                                 <span class="badge bg-danger mb-2">Deleted</span>
+                            {{/if}}
+                            {{#if this.archived}}
+                                <span class="badge bg-warning mb-2">Archived</span>
                             {{/if}}
                             <h4>{{this.name}}</h4>
                             <p class="mb-1"><strong>Cost:</strong> {{formatCurrency this.cost ../currency}}</p>
@@ -71,6 +74,15 @@
                         </div>
                         <div class="expense-actions mt-3">
                             <a href="/logs/{{../group._id}}/expenses/{{this._id}}/change-logs" class="btn btn-info">View Change Logs</a>
+                            {{#if this.archived}}
+                                {{#ifEquals ../groupStatus "active"}}
+                                    <button class="btn btn-success unarchive-expense-btn" 
+                                            data-expense-id="{{this._id}}"
+                                            data-group-id="{{../group._id}}">
+                                        Unarchive
+                                    </button>
+                                {{/ifEquals}}
+                            {{/if}}
                         </div>
                     </div>
                 {{/each}}
@@ -95,6 +107,38 @@
                 form.submit();
             });
         }
+
+        // Unarchive expense functionality
+        const unarchiveExpenseBtns = document.querySelectorAll('.unarchive-expense-btn');
+        unarchiveExpenseBtns.forEach(btn => {
+            btn.addEventListener('click', async function(event) {
+                event.stopPropagation();
+                const expenseId = this.getAttribute('data-expense-id');
+                const groupId = this.getAttribute('data-group-id');
+
+                if (confirm('Are you sure you want to unarchive this expense?')) {
+                    try {
+                        const response = await fetch(`/groups/${groupId}/${expenseId}/unarchive`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            alert('Expense unarchived successfully!');
+                            window.location.reload();
+                        } else {
+                            const data = await response.json();
+                            alert('Error: ' + (data.error || 'Failed to unarchive expense'));
+                        }
+                    } catch (error) {
+                        console.error('Error unarchiving expense:', error);
+                        alert('An error occurred while unarchiving the expense');
+                    }
+                }
+            });
+        });
     });
 </script>
 
