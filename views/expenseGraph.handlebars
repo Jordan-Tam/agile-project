@@ -1,0 +1,165 @@
+{{> header}}
+<div class="container-fluid">
+    <h1 class="mb-4">Expense Visualization</h1>
+    <p class="mb-4">View interactive graphs of your expenses across all groups</p>
+
+    {{#if totalExpenses}}
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Expenses</h5>
+                        <p class="card-text display-6">{{totalExpenses}}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Cost</h5>
+                        <p class="card-text display-6">${{totalCost}}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row mb-4">
+            <!-- Pie Chart -->
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Expenses by Category</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="pieChart" style="max-height: 400px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bar Chart -->
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Expenses Over Time</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="barChart" style="max-height: 400px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {{else}}
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">No Expenses Found</h4>
+            <p>You don't have any active expenses yet. Create a group and add expenses to see visualizations here.</p>
+            <hr>
+            <p class="mb-0"><a href="/groups/new" class="btn btn-primary">Create Your First Group</a></p>
+        </div>
+    {{/if}}
+</div>
+
+{{#if totalExpenses}}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    // Parse the graph data from the server
+    const graphData = {{{graphData}}};
+
+    // Debug: Log the data to console
+    console.log('Graph Data:', graphData);
+
+    // Pie Chart - Expenses by Name
+    if (graphData.byName && graphData.byName.labels && graphData.byName.labels.length > 0) {
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: graphData.byName.labels,
+                datasets: [{
+                    label: 'Cost ($)',
+                    data: graphData.byName.data,
+                    backgroundColor: graphData.byName.colors,
+                    borderWidth: 1
+                }]
+            },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+        });
+    } else {
+        document.getElementById('pieChart').parentElement.innerHTML = '<p class="text-muted text-center p-4">No expense data available for pie chart</p>';
+    }
+
+    // Bar Chart - Expenses Over Time
+    if (graphData.byDate && graphData.byDate.labels && graphData.byDate.labels.length > 0) {
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: graphData.byDate.labels,
+                datasets: [{
+                    label: 'Total Cost ($)',
+                    data: graphData.byDate.data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Total: $' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+        });
+    } else {
+        document.getElementById('barChart').parentElement.innerHTML = '<p class="text-muted text-center p-4">No expense data available for time chart</p>';
+    }
+</script>
+{{/if}}

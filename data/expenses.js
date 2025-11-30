@@ -468,6 +468,89 @@ const exportedMethods = {
 		}
 
 		return updateResult;
+	},
+
+	async getExpenseGraphData(userId) {
+		userId = checkId(userId, "User", "getExpenseGraphData");
+
+		const userGroups = await groupsData.getGroupsForUser(userId);
+		if (!userGroups || userGroups.length === 0) {
+			return {
+				byName: { labels: [], data: [], colors: [] },
+				byDate: { labels: [], data: [] },
+				totalExpenses: 0,
+				totalCost: 0
+			};
+		}
+
+		const expensesByName = {};
+		const expensesByMonth = {};
+		let totalExpenses = 0;
+		let totalCost = 0;
+
+		for (const group of userGroups) {
+			const expenses = group.expenses || [];
+			const activeExpenses = expenses.filter(exp => !exp.archived);
+
+			for (const expense of activeExpenses) {
+				totalExpenses++;
+				totalCost += expense.cost;
+
+				// Group by expense name
+				if (!expensesByName[expense.name]) {
+					expensesByName[expense.name] = 0;
+				}
+				expensesByName[expense.name] += expense.cost;
+
+				// Group by month
+				if (expense.deadline) {
+					const date = new Date(expense.deadline);
+					if (!isNaN(date.getTime())) {
+						const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+						if (!expensesByMonth[monthKey]) {
+							expensesByMonth[monthKey] = 0;
+						}
+						expensesByMonth[monthKey] += expense.cost;
+					}
+				}
+			}
+		}
+
+		// Generate colors for pie chart
+		const generateColors = (count) => {
+			const colors = [
+				'#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+				'#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF9F40'
+			];
+			return Array.from({ length: count }, (_, i) => colors[i % colors.length]);
+		};
+
+		// Sort expenses by name (top 10)
+		const sortedByName = Object.entries(expensesByName)
+			.sort((a, b) => b[1] - a[1])
+			.slice(0, 10);
+
+		// Sort months chronologically
+		const sortedByMonth = Object.entries(expensesByMonth)
+			.sort((a, b) => a[0].localeCompare(b[0]));
+
+		return {
+			byName: {
+				labels: sortedByName.map(([name]) => name),
+				data: sortedByName.map(([, cost]) => parseFloat(cost.toFixed(2))),
+				colors: generateColors(sortedByName.length)
+			},
+			byDate: {
+				labels: sortedByMonth.map(([month]) => {
+					const [year, monthNum] = month.split('-');
+					const date = new Date(year, parseInt(monthNum) - 1);
+					return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+				}),
+				data: sortedByMonth.map(([, cost]) => parseFloat(cost.toFixed(2)))
+			},
+			totalExpenses,
+			totalCost: parseFloat(totalCost.toFixed(2))
+		};
 	}
 };
 

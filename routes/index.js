@@ -6,6 +6,7 @@ import searchRoutes from "./search.js";
 import profileRoutes from "./profile.js";
 import logsRoutes from "./logs.js";
 import groupsData from "../data/groups.js";
+import expensesData from "../data/expenses.js";
 import {
   rewriteUnsupportedBrowserMethods,
   requireAuth
@@ -37,6 +38,22 @@ const constructorMethod = (app) => {
 
   app.use("/manual", requireAuth, async (req, res) => {
     res.render("instruction-manual");
+  });
+
+  app.get("/expenses/graph", requireAuth, async (req, res) => {
+    try {
+      const graphData = await expensesData.getExpenseGraphData(req.session.user._id);
+      console.log("Expense Graph Data:", JSON.stringify(graphData, null, 2));
+      res.render("expenseGraph", {
+        user: req.session.user,
+        graphData: JSON.stringify(graphData),
+        totalExpenses: graphData.totalExpenses,
+        totalCost: graphData.totalCost.toFixed(2)
+      });
+    } catch (e) {
+      console.error("Error rendering expense graph:", e);
+      res.status(500).render("error", { error: e });
+    }
   });
 
   app.use("/register", registerRoutes);
