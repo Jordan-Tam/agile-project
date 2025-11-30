@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import groupsData from "../data/groups.js";
 import expensesData from "../data/expenses.js";
 import usersData from "../data/users.js";
+import postsData from "../data/posts.js";
 import changeLogsData from "../data/changeLogs.js";
 import { requireAuth } from "../middleware.js";
 import {
@@ -139,6 +140,105 @@ router
 				title: "Create a Group",
 				error: e.toString()
 			});
+		}
+	});
+
+// Post routes
+router
+	.route("/:groupId/posts")
+	.get(requireAuth, async (req, res) => {
+		try {
+			const groupId = checkId(req.params.groupId);
+			const group = await groupsData.getGroupByID(groupId);
+			console.log(groupId);
+			return res.render("groups/posts", {
+				groupId,
+				posts: group.posts
+			})
+		} catch (e) {
+			return res.status(404).render("error", {
+				error: "Group Not Found"
+			});
+		}
+	})
+	.delete(requireAuth, async (req, res) => {
+		console.log("I'm in DELETE post route!");
+		let groupId, group;
+		let {postId} = req.body;
+		try {
+			groupId = checkId(req.params.groupId);
+			group = await groupsData.getGroupByID(groupId);
+		} catch (e) {
+			return res.status(404).render("error", {
+				error: "Group Not Found"
+			})
+		}
+		try {
+			postId = checkId(postId);
+			await postsData.getPostById(postId);
+		} catch (e) {
+			return res.status(404).render("error", {
+				error: "Post Not Found"
+			})
+		}
+		try {
+			await postsData.deletePost(postId);
+			
+			// Get updated group object to display.
+			let group = await groupsData.getGroupByID(groupId);
+			
+			return res.render("groups/posts", {
+				groupId,
+				posts: group.posts
+			});
+		} catch (e) {
+			return res.status(500).render("groups/posts", {
+				groupId,
+				posts: group.posts,
+				error: "Post could not be deleted."
+			});
+		}
+	});
+
+router
+	.route("/:groupId/posts/new")
+	.get(requireAuth, async (req, res) => {
+		try {
+			const groupId = checkId(req.params.groupId);
+			const group = await groupsData.getGroupByID(groupId);
+			return res.render("groups/createPost", {
+				groupId
+			});
+		} catch (e) {
+			return res.status(404).render("error", {
+				error: "Group Not Found"
+			});
+		}
+	})
+	.post(requireAuth, async (req, res) => {
+		let groupId, group;
+		let {title, body} = req.body;
+		try {
+			groupId = checkId(req.params.groupId);
+			group = await groupsData.getGroupByID(groupId);
+		} catch (e) {
+			return res.status(404).render("error", {
+				error: "Group Not Found"
+			});
+		}
+		try {
+			await postsData.createPost(
+				groupId,
+				req.session.user._id,
+				title,
+				body
+			)
+			res.redirect(`/groups/${groupId}/posts`);
+		} catch (e) {
+			return res.status(500).render("groups/createPost", {
+				groupId,
+				error: "Post could not be created."
+			})
 		}
 	});
 

@@ -28,7 +28,8 @@ const exportedMethods = {
             _id: new ObjectId(),
             poster: poster.userId,
             title,
-            body
+            body,
+            date: new Date().toLocaleString()
         };
 
         const groupsCollection = await groups();
@@ -102,9 +103,12 @@ const exportedMethods = {
             throw "Post could not be found.";
         }
 
+        //console.log(post_ObjectId.toString());
+        //console.log(group.posts);
+
         // Remove the post from the group's posts array.
         const groupPosts = group.posts.filter((post) => {
-            post._id.toString() !== post_ObjectId.toString()
+            return post._id.toString() !== post_ObjectId.toString()
         });
 
         const deleteInfo = await groupsCollection.findOneAndUpdate(
@@ -120,6 +124,42 @@ const exportedMethods = {
         return true;
 
     },
+
+    async getAllPosts(group_ObjectId) {
+
+        // Input validation.
+        //group_ObjectId = checkId(group_ObjectId);
+
+        //let group = await groupsData.getGroupByID(group_ObjectId);
+
+        // Never mind, just call getGroupbyID and get the posts field.
+
+    },
+
+    async getPostById(post_ObjectId) {
+
+        // Input validation.
+        post_ObjectId = checkId(post_ObjectId);
+
+        const groupsCollection = await groups();
+
+        const group = await groupsCollection.findOne(
+            {"posts._id": new ObjectId(post_ObjectId)}
+        );
+
+        if (!group) {
+            throw "Post could not be found.";
+        }
+
+        // Return the post.
+        const groupPosts = group.posts;
+        for (let i = 0; i < group.posts.length; i++) {
+            if (groupPosts[i]._id.toString() === post_ObjectId.toString()) {
+                return group.posts[i];
+            }
+        }
+
+    }
 
 };
 

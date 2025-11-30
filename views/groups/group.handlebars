@@ -47,8 +47,13 @@
     </form>
 
     <button type="button" id="changeCurrencyBtn">Change Currency</button>
+
     <form action="/groups/{{group._id}}/export-pdf" method="get" style="display:inline;">
       <button type="submit" class="btn-export">Export PDF</button>
+    </form>
+    
+    <form action="/groups/{{group._id}}/posts" method="GET" style="display:inline;">
+        <button type="submit">Posts</button>
     </form>
   </div>
   

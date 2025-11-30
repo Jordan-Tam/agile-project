@@ -1,0 +1,41 @@
+{{> header}}
+<div class="container-fluid">
+
+	{{> back-button route=(concat "/groups/" groupId)}}
+
+	<h1>Create a New Post</h1>
+
+	{{#if error}}
+		<div class="error">{{error}}</div>
+	{{/if}}
+
+	<form method="POST" action="/groups/{{groupId}}/posts/new" id="create-post-form">
+		<div class="custom-card form-floating mb-3">
+			<input
+				class="form-control"
+				placeholder="Title goes here"
+				id="title"
+				name="title"
+				minLength="1"
+				maxLength="50"
+				required
+			/>
+			<label for="title">Title</label>
+		</div>
+		<div class="custom-card form-floating mb-3">
+			<textarea
+				class="form-control"
+				placeholder="Post body goes here"
+				id="body"
+				name="body"
+				maxLength="20000"
+				style="resize: both;"
+				required
+			></textarea>
+			<label for="body">Body</label>
+		</div>
+		<button type="submit">Create Post</button>
+	</form>
+
+</div>
+{{> custom-card-script initial_width_num=3}}
