@@ -27,7 +27,8 @@ export async function runChangeLogsTests() {
 
 	const testGroup = await groupsData.createGroup(
 		"Test Group for Logs",
-		"This group is for testing change logs"
+		"This group is for testing change logs",
+		user1._id.toString()
 	);
 
 	await groupsData.addMember(testGroup._id, user1.userId);
@@ -484,9 +485,11 @@ export async function runChangeLogsTests() {
 	console.log("PASS: test_markGroupAsDeleted_invalid_groupId");
 
 	// Create another group and add logs for testing markGroupAsDeleted
+
 	const testGroup2 = await groupsData.createGroup(
 		"Test Group 2 for Deletion",
-		"Testing markGroupAsDeleted"
+		"Testing markGroupAsDeleted",
+		user1._id.toString()
 	);
 	await groupsData.addMember(testGroup2._id, user1.userId);
 	await groupsData.addMember(testGroup2._id, user2.userId);
@@ -546,7 +549,8 @@ export async function runChangeLogsTests() {
 	// Create a new group for testing updateVisibleToForGroup
 	const testGroup3 = await groupsData.createGroup(
 		"Test Group 3 for VisibleTo",
-		"Testing updateVisibleToForGroup"
+		"Testing updateVisibleToForGroup",
+		user1._id.toString()
 	);
 	await groupsData.addMember(testGroup3._id, user1.userId);
 
@@ -604,7 +608,8 @@ export async function runChangeLogsTests() {
 	// Test group with no members (create a new group without adding members)
 	const emptyGroup = await groupsData.createGroup(
 		"Empty Group",
-		"A group with no members"
+		"A group with no members",
+		user1._id.toString()
 	);
 	const emptyMemberIds = await changeLogsData.getAllGroupMemberIds(emptyGroup._id);
 	assert.isArray(emptyMemberIds);

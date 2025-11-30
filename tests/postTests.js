@@ -5,13 +5,14 @@ import postsData from "../data/posts.js";
 
 export async function runPostsTests() {
 
-    const group = await groupsData.createGroup(
-        "Linux Club",
-        "Members of the Linux Club eboard"
+    const user1 = await usersData.createUser(
+        "Benjamin", "Frankling", "ben200", "Password!98"
     );
 
-    const user1 = await usersData.createUser(
-        "Benjamin", "Franklin", "ben100", "Password!1"
+    const group = await groupsData.createGroup(
+        "Linux Club",
+        "Members of the Linux Club eboard",
+        user1._id.toString()
     );
 
     const post1 = await postsData.createPost(

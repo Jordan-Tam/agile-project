@@ -22,12 +22,14 @@ export async function runExpenseGraphTests() {
 	// Create test groups for the dedicated test user
 	const testGroup1 = await groupsData.createGroup(
 		"Graph Test Group 1",
-		"First group for testing expense graph data"
+		"First group for testing expense graph data",
+		graphTestUser._id.toString()
 	);
 
 	const testGroup2 = await groupsData.createGroup(
 		"Graph Test Group 2",
-		"Second group for testing expense graph data"
+		"Second group for testing expense graph data",
+		graphTestUser._id.toString()
 	);
 
 	// Add members to groups - use dedicated test user

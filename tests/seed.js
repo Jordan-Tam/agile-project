@@ -29,12 +29,14 @@ export async function seed() {
     //! CREATE GROUPS
     let ROOMMATES = await groupsData.createGroup(
         "Roommates Group",
-        "For coordinates expenses on groceries and apartment repairs."
+        "For coordinates expenses on groceries and apartment repairs.",
+        JANE_SMITH._id.toString()
     );
 
     let VIDEO_GAME_CLUB = await groupsData.createGroup(
         "Video Game Club",
-        "Expense group for eboard members of the Generic University's official video game club."
+        "Expense group for eboard members of the Generic University's official video game club.",
+        JOHN_DOE._id.toString()
     );
 
     //! ADD USERS TO GROUPS

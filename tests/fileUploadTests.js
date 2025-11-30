@@ -16,11 +16,11 @@ export async function runFileUploadTests() {
 	console.log("\n=== File Upload Tests ===");
 
 	const usersList = await usersData.getAllUsers();
-
 	// Create a test group
 	const testGroup = await groupsData.createGroup(
 		"File Upload Test Group",
-		"This group is for testing file upload functionality."
+		"This group is for testing file upload functionality.",
+		usersList[0]._id.toString()
 	);
 
 	await groupsData.addMember(

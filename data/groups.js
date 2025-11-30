@@ -11,7 +11,18 @@ const exportedMethods = {
 		const groupCollection = await groups();
 		const group = await groupCollection.findOne({ _id: new ObjectId(id) });
 		if (!group) throw "Error: Group not found";
-
+		if(group.leaderId){
+			try {
+				const leader = await user.getUserById(group.leaderId.toString());
+				group.leader= {
+					_id: leader._id,
+					firstName: leader.firstName, 
+					lastName: leader.lastName
+				}
+			}catch(e){
+				console.error("Error loading leader:", e);
+			}
+		}
 		// Convert groupMembers to detailed user objects
 		if (group.groupMembers && group.groupMembers.length > 0) {
 			const allUsers = await user.getAllUsers();
@@ -79,7 +90,7 @@ const exportedMethods = {
 	},
 
 	// Create a new group
-	async createGroup(groupName, groupDescription) {
+	async createGroup(groupName, groupDescription, creatorId) {
 		groupName = checkString(groupName, "groupName");
 		if (groupName.length < 5 || groupName.length > 50) {
 			throw "Invalid group name length";
@@ -89,12 +100,13 @@ const exportedMethods = {
 		if (groupDescription.length > 1000) {
 			throw "Invalid group description length";
 		}
-
+		creatorId= checkId(creatorId, "Creator ID");
 		const newGroup = {
 			groupName,
 			groupDescription,
 			expenses: [],
-			currency: "USD" // Default currency for new groups
+			currency: "USD", // Default currency for new groups
+			leaderId: new ObjectId(creatorId)
 		};
 
 		const groupCollection = await groups();

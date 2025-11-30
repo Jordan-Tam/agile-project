@@ -39,7 +39,8 @@ export async function runPdfExportTests() {
 		// Setup: Create test group
 		testGroup = await groupsData.createGroup(
 			"PDF Export Test Group",
-			"This group is for testing PDF export functionality"
+			"This group is for testing PDF export functionality",
+			testUser1._id.toString()
 		);
 		console.log(`✓ Created test group: ${testGroup._id}`);
 
@@ -138,7 +139,8 @@ export async function runPdfExportTests() {
 		console.log("Test 6: Verify group with no expenses");
 		const emptyGroup = await groupsData.createGroup(
 			"Empty Test Group",
-			"Group with no expenses"
+			"Group with no expenses",
+			testUser1._id.toString()
 		);
 		const emptyGroupData = await groupsData.getGroupByID(emptyGroup._id);
 		const expenses = emptyGroupData.expenses || [];
@@ -154,7 +156,8 @@ export async function runPdfExportTests() {
 		console.log("Test 7: Verify group with no members");
 		const groupWithNoMembers = await groupsData.createGroup(
 			"No Members Group",
-			"Group with no members"
+			"Group with no members",
+			testUser1._id.toString()
 		);
 		const noMembersGroupData = await groupsData.getGroupByID(
 			groupWithNoMembers._id
@@ -206,7 +209,8 @@ export async function runPdfExportTests() {
 		console.log("Test 10: Verify filename sanitization");
 		const groupWithSpecialChars = await groupsData.createGroup(
 			"Test / Group * Name!",
-			"Group with special characters"
+			"Group with special characters",
+			testUser1._id.toString()
 		);
 		const sanitizedName = groupWithSpecialChars.groupName.replace(
 			/[^a-z0-9]/gi,

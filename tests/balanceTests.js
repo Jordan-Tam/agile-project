@@ -92,7 +92,8 @@ export async function runBalanceTests() {
 		try {
 			testGroup = await groupsData.createGroup(
 				"Balance Test Group",
-				"A group for testing balance calculations"
+				"A group for testing balance calculations",
+				testUsers[0]._id.toString()
 			);
 
 			expect(testGroup).to.not.be.null;

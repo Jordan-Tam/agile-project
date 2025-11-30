@@ -32,19 +32,22 @@
     <form action="/groups/{{group._id}}/addMember" method="get" style="display:inline;">
       <button type="submit">Add Member</button>
     </form>
-
-    <form action="/groups/{{group._id}}/removeMember" method="get" style="display:inline;">
-        <button type="submit">Remove Member</button>
-    </form>
+    {{#ifEquals group.leader._id currentUserId}}
+        <form action="/groups/{{group._id}}/removeMember" method="get" style="display:inline;">
+            <button type="submit">Remove Member</button>
+        </form>
+    {{/ifEquals}}
 
     <form action="/groups/{{group._id}}/edit" method="get" style="display:inline;">
       <button type="submit">Edit Group</button>
     </form>
 
+    {{#ifEquals group.leader._id currentUserId}}
     <form action="/groups/{{group._id}}" method="post" style="display:inline;">
         <input type="hidden" name="_method" value="DELETE">
         <button type="submit">Delete Group</button>
     </form>
+     {{/ifEquals}}
 
     <button type="button" id="changeCurrencyBtn">Change Currency</button>
 
@@ -71,7 +74,10 @@
       <ul class="member-list">
         {{#each groupMembers}}
           <li class="member-item">
-            <span class="member-name">{{this.firstName}} {{this.lastName}}</span>
+            <span class="member-name">
+                {{this.firstName}} {{this.lastName}}
+                {{#ifEquals this._id ../group.leader._id}} (Leader){{/ifEquals}}
+            </span>
             {{#with (lookup ../balances this._id)}}
               <ul class="balance-list">
                 {{#each owes}}

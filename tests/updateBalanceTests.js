@@ -20,9 +20,13 @@ export async function runUpdateBalanceTests(){
         //console.log(e);
         assert(e === "Group ID is required.");
     }
+    const user1 = await usersData.createUser(
+        "Benjamin", "Franklind", "ben750", "Password!71"
+    );
 	const group_1 = await groupsData.createGroup(
 		"Test Group",
-		"This expense group is for testing expense data functions."
+		"This expense group is for testing expense data functions.",
+        user1._id.toString()
 	);
     try {
         await expensesData.addPayment(group_1._id.toString());
