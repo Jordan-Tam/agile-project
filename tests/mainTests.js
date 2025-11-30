@@ -19,6 +19,7 @@ import { runDeleteUserTests } from "./deleteUserTests.js";
 import { runFileUploadTests } from "./fileUploadTests.js";
 import { runArchiveTests } from "./archiveTests.js";
 import { runPostsTests } from "./postTests.js";
+import { runExpenseGraphTests } from "./expenseGraphTests.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -207,6 +208,9 @@ async function run() {
 		console.log("\n=== Running Posts Test ===");
 		await runPostsTests();
 
+		console.log("\n=== Running Expense Graph Tests ===");
+		await runExpenseGraphTests();
+
 		// Run the inline group data tests
 		//await runInlineGroupTests();
 
@@ -233,6 +237,7 @@ async function run() {
 		console.log("File Upload tests -> see above logs");
 		console.log("Archive tests -> see above logs");
 		console.log("Posts tests -> see above logs");
+		console.log("Expense Graph tests -> see above logs");
 		//console.log("Inline group data tests -> see above logs");
 	} catch (err) {
 		console.error("Error running tests:", err);
