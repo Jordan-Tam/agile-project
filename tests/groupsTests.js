@@ -1,12 +1,17 @@
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import groupsData from "../data/groups.js";
+import usersData from "../data/users.js";
 import { ObjectId } from 'mongodb';
 import user from '../data/groups.js'
+import {dbConnection} from '../config/mongoConnection.js'
 chai.use(chaiAsPromised);
 
 export async function runGroupTests() {
 	try {
+		let bill = await usersData.createUser(
+			"Bill", "Nye", "billnye", "Password!88"
+		);
 		await chai
 			.expect(groupsData.createGroup())
 			.to.be.rejectedWith("groupName is required.");
@@ -14,25 +19,29 @@ export async function runGroupTests() {
 			.expect(groupsData.createGroup("group 1"))
 			.to.be.rejectedWith("groupDescription is required.");
 		await chai
-			.expect(groupsData.createGroup(52, "group description"))
+			.expect(groupsData.createGroup("group 1", "group description"))
+			.to.be.rejectedWith("Creator ID ID is required.");
+		await chai
+			.expect(groupsData.createGroup(52, "group description", bill._id.toString()))
 			.to.be.rejectedWith("groupName must be a string.");
 		await chai
-			.expect(groupsData.createGroup("group 1", 52))
+			.expect(groupsData.createGroup("group 1", 52, bill._id.toString()))
 			.to.be.rejectedWith("groupDescription must be a string.");
 		await chai
-			.expect(groupsData.createGroup("    ", "group description"))
+			.expect(groupsData.createGroup("    ", "group description", bill._id.toString()))
 			.to.be.rejectedWith("groupName cannot be empty.");
 		await chai
-			.expect(groupsData.createGroup("group 1", "    "))
+			.expect(groupsData.createGroup("group 1", "    ", bill._id.toString()))
 			.to.be.rejectedWith("groupDescription cannot be empty.");
 		await chai
-			.expect(groupsData.createGroup("g", "This is group 1"))
+			.expect(groupsData.createGroup("g", "This is group 1", bill._id.toString()))
 			.to.be.rejectedWith("Invalid group name length");
 		await chai
 			.expect(
 				groupsData.createGroup(
 					"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-					"This is group 1"
+					"This is group 1",
+					bill._id.toString()
 				)
 			)
 			.to.be.rejectedWith("Invalid group name length");
@@ -40,16 +49,33 @@ export async function runGroupTests() {
 			.expect(
 				groupsData.createGroup(
 					"group 1",
-					"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+					"This is group 1",
+					5
+				)
+			)
+			.to.be.rejectedWith("Creator ID ID must be a string.")
+		await chai
+			.expect(
+				groupsData.createGroup(
+					"group 1",
+					"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					bill._id.toString()
 				)
 			)
 			.to.be.rejectedWith("Invalid group description length");
-		const group_1 = await groupsData.createGroup("group 1", "This is group 1");
+		const group_1 = await groupsData.createGroup("group 1", "This is group 1", bill._id.toString());
 		chai.assert.deepEqual(group_1, {
 			_id: group_1._id,
 			groupName: "group 1",
 			groupDescription: "This is group 1",
+			expenses: [],
 			currency: "USD",
+			leaderId: new ObjectId(bill._id),
+			leader: {
+				_id: bill._id,
+				firstName: 'Bill',
+				lastName: 'Nye'
+			},
 			groupMembers: []
 		});
 
@@ -122,10 +148,14 @@ try {
 
 	// TESTS FOR EDIT GROUP (updateGroup)
 	try {
+		let georgeBush= await usersData.createUser(
+			"George", "Bush", "georgebush", "Password!77"
+		);
 		// Create a test group first
 		const testGroup = await groupsData.createGroup(
 			"Test Edit Group",
-			"Original description for testing edit"
+			"Original description for testing edit",
+			georgeBush._id.toString()
 		);
 
 		// --- Invalid argument tests ---

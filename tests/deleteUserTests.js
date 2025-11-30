@@ -6,10 +6,13 @@ import groupsData from "../data/groups.js";
 export async function runDeleteUserTests() {
 
     //console.log(1);
-
+    let testuser = await usersData.createUser(
+        "Jared", "Smith", "jaredsmith", "Password!55"
+    );
     const group = await groupsData.createGroup(
         "Linux Club",
-        "Members of the Linux Club eboard"
+        "Members of the Linux Club eboard",
+        testuser._id.toString()
     );
 
     //console.log(2);

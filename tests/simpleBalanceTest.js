@@ -31,7 +31,8 @@ async function testBalanceCalculation() {
 		console.log("\nCreating test group...");
 		const testGroup = await groupsData.createGroup(
 			"Balance Calc Test",
-			"Testing balance calculation"
+			"Testing balance calculation",
+			user1._id.toString()
 		);
 		console.log(`✓ Created group: ${testGroup._id}`);
 

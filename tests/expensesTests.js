@@ -11,10 +11,10 @@ import expensesData from "../data/expenses.js";
 
 export async function runExpenseTests() {
 	const usersList = await usersData.getAllUsers();
-
 	const group_1 = await groupsData.createGroup(
 		"Test Group",
-		"This expense group is for testing expense data functions."
+		"This expense group is for testing expense data functions.",
+		usersList[0]._id.toString()
 	);
 
 	await groupsData.addMember(
@@ -299,12 +299,14 @@ export async function runExpenseTests() {
 		// Create additional test groups and expenses for search testing
 		const searchTestGroup1 = await groupsData.createGroup(
 			"Search Test Group 1",
-			"Group for search expense testing"
+			"Group for search expense testing",
+			usersList[0]._id.toString()
 		);
 		
 		const searchTestGroup2 = await groupsData.createGroup(
 			"Search Test Group 2",
-			"Another group for search testing"
+			"Another group for search testing",
+			 usersList[0]._id.toString()
 		);
 
 		// Add users to test groups

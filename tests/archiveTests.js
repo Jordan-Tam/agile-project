@@ -10,11 +10,11 @@ export async function runArchiveTests() {
 	console.log("\n=== Starting Archive Tests ===");
 
 	const usersList = await usersData.getAllUsers();
-
 	// Create a test group
 	const testGroup = await groupsData.createGroup(
 		"Archive Test Group",
-		"This group is for testing archive functionality."
+		"This group is for testing archive functionality.",
+		usersList[0]._id.toString()
 	);
 
 	// Add members to the group
