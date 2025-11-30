@@ -3,6 +3,7 @@ export const rewriteUnsupportedBrowserMethods = (req, res, next) => {
 	if (req.body && req.body._method) {
 		console.log("hi");
 		console.log(req.body._method);
+		console.log(req.path);
 		req.method = req.body._method;
 		delete req.body._method;
 	}

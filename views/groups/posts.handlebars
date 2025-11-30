@@ -1,0 +1,27 @@
+{{> header}}
+<main>
+    {{#if posts}}
+        {{#if error}}
+            <div class="error">{{error}}</div>
+        {{/if}}
+        <div class="container-fluid">
+            <p><a href="/groups/{{groupId}}/posts/new">Create a new post.</a></p>
+        </div>
+        <div class="container-fluid">
+            {{#each posts}}
+                {{> post-card
+                    groupId=../groupId
+                    postId=_id
+                    poster=poster
+                    title=title
+                    body=body
+                }}
+            {{/each}}
+        </div>
+    {{else}}
+        <div class="container-fluid">
+            <p>Nobody has posted anything yet. <a href="/groups/{{groupId}}/posts/new">Be the first one.</a></p>
+        </div>
+    {{/if}}
+</main>
+{{> custom-card-script initial_width_num=2}}

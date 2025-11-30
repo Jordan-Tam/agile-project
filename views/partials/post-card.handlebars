@@ -1,0 +1,16 @@
+<div class="col">
+    <div class="custom-card card text-bg-light mb-3">
+        <div class="card-body">
+            <h2 class="card-title">
+                {{title}}
+            </h2>
+            <p class="card-text">{{body}}</p>
+            <p class="card-text">Posted by: <span style="font-weight: bold;">{{poster}}</span> at {{date}}</p>
+            <form action="/groups/{{groupId}}/posts" method="POST" style="display:inline;">
+                <input type="hidden" name="_method" value="DELETE">
+                <input type="hidden" name="postId" value="{{postId}}">
+                <button type="submit">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
