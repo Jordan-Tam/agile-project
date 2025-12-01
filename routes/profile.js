@@ -18,7 +18,15 @@ router
 .get("/", requireAuth, async (req, res) => {
     try {
         const userId = req.session.user._id.toString();
-        const userGroups = await groupsData.getGroupsForUser(userId);
+        const user = await usersData.getUserById(userId);
+        let userGroups = await groupsData.getGroupsForUser(userId);
+
+        const pinned = user.pinnedGroups?.map(id => id.toString()) || [];
+
+        const pinnedGroups = userGroups.filter(g => pinned.includes(g._id.toString()));
+        const otherGroups = userGroups.filter(g => !pinned.includes(g._id.toString()));
+        userGroups = [...pinnedGroups, ...otherGroups];
+
 
         let totalOwes = 0; // total the user owes
         let totalOwedTo = 0; // total owed to the user
@@ -51,6 +59,7 @@ router
         res.render("profileView", {
             user: req.session.user,
             userGroups: userGroups,
+            userPinnedGroups: pinned,
             totalOwes,
             totalOwedTo,
             success
@@ -262,5 +271,24 @@ router.patch("/", requireAuth, async (req, res) => {
     return res.redirect("/profile?success=true");
 
 });
+
+router.post("/pinGroup", requireAuth, async (req, res) => {
+    try {
+        const { groupId, action } = req.body;
+        const userId = req.session.user._id.toString();
+
+        if (action === "pin") {
+            await usersData.pinGroup(userId, groupId);
+        } else {
+            await usersData.unpinGroup(userId, groupId);
+        }
+
+        return res.redirect("/profile");
+    } catch (e) {
+        console.error(e);
+        return res.redirect("/profile");
+    }
+});
+
 
 export default router;

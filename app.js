@@ -84,6 +84,9 @@ app.engine(
 	})
 );
 app.set("view engine", "handlebars");
+app.use((req, res, next) => {
+    next();
+});
 configRoutes(app);
 // Start the server
 app.listen(3000, () => {

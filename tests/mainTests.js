@@ -20,6 +20,7 @@ import { runFileUploadTests } from "./fileUploadTests.js";
 import { runArchiveTests } from "./archiveTests.js";
 import { runPostsTests } from "./postTests.js";
 import { runExpenseGraphTests } from "./expenseGraphTests.js";
+import { runPinTests } from "./pinTests.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -169,6 +170,9 @@ async function run() {
 		console.log("\n=== Running Groups Tests ===");
 		await runGroupTests();
 
+		console.log("\n=== Running Pin and Unpin Tests ===");
+		await runPinTests();
+
 		console.log("\n=== Running Expenses Tests ===");
 		await runExpenseTests();
 
@@ -220,6 +224,7 @@ async function run() {
 		);
 		console.log("Groups tests -> see above logs");
 		console.log("Edit Group tests -> see above logs");
+		console.log("Pin/Unpin tests -> see above logs");
 		console.log("Expenses tests -> see above logs");
 		console.log("Update Balance tests -> see above logs");
 		console.log("Search Expenses tests -> see above logs");
