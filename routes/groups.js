@@ -1626,13 +1626,13 @@ router
 			group = await groupsData.getGroupByID(groupId);
 			if(group.leaderId.toString() !== req.session.user._id.toString()){
 				return res.status(403).render("error", {
-					Error: "Only the group leader can remove members."
+					error: "Only the group leader can remove members."
 				});
 			}
 			user_id = checkId(user_id, "User ID", "POST /:id/removeMember");
 			if(user_id.toString() === group.leaderId.toString()){
 				return res.status(400).render("error", {
-					Error: "The leader cannot remove themselves."
+					error: "The leader cannot remove themselves."
 				});
 			}
 		} catch (e) {
