@@ -41,7 +41,8 @@ const exportedMethods = {
 				userId,
 				passwordHash,
 				signupDate: nowISO,
-				lastLogin: nowISO
+				lastLogin: nowISO,
+				pinnedGroups: []
 			};
 
 			const insert = await users.insertOne(doc);
@@ -115,7 +116,8 @@ const exportedMethods = {
 			userId: user.userId,
 			role: user.role,
 			signupDate: user.signupDate,
-			lastLogin: user.lastLogin
+			lastLogin: user.lastLogin,
+			pinnedGroups: user.pinnedGroups || []
 		};
 	},
 
@@ -139,7 +141,8 @@ const exportedMethods = {
 			userId: user.userId,
 			role: user.role,
 			signupDate: user.signupDate,
-			lastLogin: user.lastLogin
+			lastLogin: user.lastLogin,
+			pinnedGroups: user.pinnedGroups || []
 		};
 	},
 
@@ -312,7 +315,36 @@ const exportedMethods = {
 
 		return true;
 
-	}
+	},
+	async pinGroup(userId, groupId) {
+		userId = checkId(userId, "User ID");
+		groupId = checkId(groupId, "Group ID");
+
+		const usersCol = await usersCollection();
+		const updateInfo = await usersCol.findOneAndUpdate(
+			{ _id: new ObjectId(userId) },
+			{ $addToSet: { pinnedGroups: new ObjectId(groupId) } },
+			{ returnOriginal: "false" }
+		);
+		const result = updateInfo.value || updateInfo;
+		if (!result) throw "Failed to pin group";
+		return result;
+	},
+
+	async unpinGroup(userId, groupId) {
+		userId = checkId(userId, "User ID");
+		groupId = checkId(groupId, "Group ID");
+
+		const usersCol = await usersCollection();
+		const updateInfo = await usersCol.findOneAndUpdate(
+			{ _id: new ObjectId(userId) },
+			{ $pull: { pinnedGroups: new ObjectId(groupId) } },
+			{ returnOriginal: "false" }
+		);
+		const result = updateInfo.value || updateInfo;
+		if (!result) throw "Failed to pin group";
+		return result;
+	},
 
 }
 

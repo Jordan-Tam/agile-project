@@ -45,7 +45,18 @@
                                     {{#if this.groupDescription}}
                                     <small class="text-muted d-block">{{this.groupDescription}}</small>
                                     {{/if}}
+                                    <form action="/profile/pinGroup" method="POST" style="display:inline;">
+                                        <input type="hidden" name="groupId" value="{{this._id}}">
+                                        {{#if (contains ../userPinnedGroups this._id)}}
+                                            <input type="hidden" name="action" value="unpin">
+                                            <button type="submit" style="background:none;border:none;color:orange;">📌</button>
+                                        {{else}}
+                                            <input type="hidden" name="action" value="pin">
+                                            <button type="submit" style="background:none;border:none;color:gray;">📍</button>
+                                        {{/if}}
+                                    </form>
                                 </li>
+
                                 {{/each}}
                             </ul>
                         {{else}}
