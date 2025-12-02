@@ -18,6 +18,7 @@ router.get("/", requireAuth, async (req, res) => {
 
 		res.render("search", {
 			title: "Search Expenses",
+			user: req.session.user,
 			expenses: allExpenses,
 			groups: userGroups,
 			hasExpenses: allExpenses.length > 0,
@@ -49,6 +50,7 @@ router.post("/", requireAuth, async (req, res) => {
 
 		res.render("search", {
 			title: "Search Expenses",
+			user: req.session.user,
 			expenses: expenses,
 			groups: userGroups,
 			hasExpenses: expenses.length > 0,

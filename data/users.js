@@ -42,7 +42,8 @@ const exportedMethods = {
 				passwordHash,
 				signupDate: nowISO,
 				lastLogin: nowISO,
-				pinnedGroups: []
+				pinnedGroups: [],
+				theme: null  // Default to light mode (null = no preference = light)
 			};
 
 			const insert = await users.insertOne(doc);
@@ -117,7 +118,8 @@ const exportedMethods = {
 			role: user.role,
 			signupDate: user.signupDate,
 			lastLogin: user.lastLogin,
-			pinnedGroups: user.pinnedGroups || []
+			pinnedGroups: user.pinnedGroups || [],
+			theme: user.theme || null
 		};
 	},
 
@@ -142,7 +144,8 @@ const exportedMethods = {
 			role: user.role,
 			signupDate: user.signupDate,
 			lastLogin: user.lastLogin,
-			pinnedGroups: user.pinnedGroups || []
+			pinnedGroups: user.pinnedGroups || [],
+			theme: user.theme || null
 		};
 	},
 

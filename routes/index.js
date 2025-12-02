@@ -32,8 +32,37 @@ const constructorMethod = (app) => {
   });
 
   app.use("/settings", requireAuth, async (req, res) => {
-    // Change later
-    res.render("settings");
+    res.render("settings", {
+      user: req.session.user
+    });
+  });
+
+  // API endpoint to update user theme
+  app.post("/api/settings/theme", requireAuth, async (req, res) => {
+    try {
+      const { theme } = req.body;
+      
+      if (theme !== 'light' && theme !== 'dark' && theme !== null) {
+        return res.status(400).json({ error: "Theme must be 'light', 'dark', or null" });
+      }
+
+      await usersData.updateTheme(req.session.user._id, theme);
+      
+      // Update session
+      req.session.user.theme = theme;
+      
+      // Save session explicitly to ensure it persists
+      req.session.save((err) => {
+        if (err) {
+          console.error("Error saving session:", err);
+          return res.status(500).json({ error: "Failed to save session" });
+        }
+        res.json({ success: true, theme });
+      });
+    } catch (error) {
+      console.error("Error updating theme:", error);
+      res.status(500).json({ error: typeof error === "string" ? error : "Failed to update theme" });
+    }
   });
 
   app.use("/manual", requireAuth, async (req, res) => {

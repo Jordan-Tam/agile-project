@@ -1,4 +1,184 @@
 {{> header}}
 <main>
-    <h1>Settings</h1>
+    <div class="container-fluid mt-4">
+        <h1 class="mb-4">Settings</h1>
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Theme Settings -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">Appearance</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-1">Theme Mode</h5>
+                                <p class="text-muted mb-0">Choose between light and dark mode</p>
+                            </div>
+                            <div class="theme-toggle-container">
+                                <label class="theme-toggle">
+                                    <input type="checkbox" id="themeToggle" class="theme-toggle-input">
+                                    <span class="theme-toggle-slider">
+                                        <span class="theme-toggle-icon theme-toggle-icon-light">☀️</span>
+                                        <span class="theme-toggle-icon theme-toggle-icon-dark">🌙</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </main>
+
+<style>
+    .theme-toggle-container {
+        display: flex;
+        align-items: center;
+    }
+
+    .theme-toggle {
+        position: relative;
+        display: inline-block;
+        width: 80px;
+        height: 40px;
+        cursor: pointer;
+    }
+
+    .theme-toggle-input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .theme-toggle-slider {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ffc107;
+        border-radius: 40px;
+        transition: background-color 0.3s;
+        display: flex;
+        align-items: center;
+        padding: 4px;
+    }
+
+    .theme-toggle-slider:before {
+        content: '';
+        position: absolute;
+        height: 32px;
+        width: 32px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        border-radius: 50%;
+        transition: transform 0.3s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .theme-toggle-input:checked + .theme-toggle-slider {
+        background-color: #1e3a8a;
+    }
+
+    .theme-toggle-input:checked + .theme-toggle-slider:before {
+        transform: translateX(40px);
+    }
+
+    .theme-toggle-icon {
+        position: absolute;
+        font-size: 18px;
+        transition: opacity 0.3s;
+    }
+
+    .theme-toggle-icon-light {
+        left: 12px;
+        opacity: 1;
+    }
+
+    .theme-toggle-icon-dark {
+        right: 12px;
+        opacity: 0;
+    }
+
+    .theme-toggle-input:checked + .theme-toggle-slider .theme-toggle-icon-light {
+        opacity: 0;
+    }
+
+    .theme-toggle-input:checked + .theme-toggle-slider .theme-toggle-icon-dark {
+        opacity: 1;
+    }
+
+    /* Dark mode styles for settings page */
+    body.dark-mode .card {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+
+    body.dark-mode .card-header {
+        background-color: #1a202c;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+
+    body.dark-mode .text-muted {
+        color: #a0aec0 !important;
+    }
+
+    body.dark-mode h1,
+    body.dark-mode h2,
+    body.dark-mode h5 {
+        color: #e2e8f0;
+    }
+</style>
+
+<script>
+    // Initialize theme toggle - wait for theme-manager.js to load
+    function initializeSettings() {
+        // Wait for setTheme to be available (loaded from main layout)
+        if (typeof setTheme === 'undefined') {
+            setTimeout(initializeSettings, 50);
+            return;
+        }
+        
+        const themeToggle = document.getElementById('themeToggle');
+        
+        if (!themeToggle) {
+            setTimeout(initializeSettings, 50);
+            return;
+        }
+        
+        // Get current theme - use user theme if available, otherwise default to light
+        let currentTheme;
+        if (typeof getUserTheme !== 'undefined' && getUserTheme() !== null) {
+            currentTheme = getUserTheme();
+        } else if (typeof getTheme !== 'undefined') {
+            currentTheme = getTheme();
+        } else {
+            // Default to light mode
+            currentTheme = 'light';
+        }
+        
+        // Set initial toggle state
+        themeToggle.checked = currentTheme === 'dark';
+        
+        // Handle theme toggle - save to database
+        themeToggle.addEventListener('change', function() {
+            const newTheme = this.checked ? 'dark' : 'light';
+            if (typeof setTheme === 'function') {
+                setTheme(newTheme, true); // true = save to database via API
+            }
+        });
+    }
+    
+    // Start initialization when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeSettings);
+    } else {
+        initializeSettings();
+    }
+</script>

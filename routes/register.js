@@ -41,7 +41,8 @@ router.post("/", async (req, res) => {
 			lastName,
 			userId,
 			signupDate: nowISO,
-			lastLogin: new Date().toLocaleString()
+			lastLogin: new Date().toLocaleString(),
+			theme: null  // New users default to light mode
 		};
 
 		return res.status(201).render("register-success", {
