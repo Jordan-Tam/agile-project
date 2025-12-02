@@ -46,7 +46,8 @@ router.post("/", async (req, res) => {
 			lastName: user.lastName,
 			userId: user.userId,
 			signupDate: user.signupDate,
-			lastLogin: new Date().toLocaleString()
+			lastLogin: new Date().toLocaleString(),
+			theme: user.theme || null
 		};
 
 		// Redirect to groups page or home

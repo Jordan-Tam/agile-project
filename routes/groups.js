@@ -75,7 +75,7 @@ router
 	// GET route - display the "create group" form
 	.get(requireAuth, async (req, res) => {
 		try {
-			res.render("groups/createGroup", { title: "Create a Group" });
+			res.render("groups/createGroup", { title: "Create a Group", user: req.session.user });
 		} catch (e) {
 			res.status(500).render("error", { error: e });
 		}
@@ -129,6 +129,7 @@ router
 
 			res.render("groups/group", {
 				title: "Group Created",
+				user: req.session.user,
 				group: newGroup,
 				group_name: newGroup.groupName,
 				group_description: newGroup.groupDescription,
@@ -153,6 +154,7 @@ router
 			const group = await groupsData.getGroupByID(groupId);
 			console.log(groupId);
 			return res.render("groups/posts", {
+				user: req.session.user,
 				groupId,
 				posts: group.posts
 			})
@@ -189,6 +191,7 @@ router
 			let group = await groupsData.getGroupByID(groupId);
 			
 			return res.render("groups/posts", {
+				user: req.session.user,
 				groupId,
 				posts: group.posts
 			});
@@ -208,6 +211,7 @@ router
 			const groupId = checkId(req.params.groupId);
 			const group = await groupsData.getGroupByID(groupId);
 			return res.render("groups/createPost", {
+				user: req.session.user,
 				groupId
 			});
 		} catch (e) {
@@ -330,6 +334,7 @@ router
 			const group = await groupsData.getGroupByID(id);
 			res.render("groups/editGroup", {
 				title: "Edit Group",
+				user: req.session.user,
 				group: group,
 				group_id: id,
 				group_name: group.groupName,
@@ -835,6 +840,7 @@ router
 			); */
 
 			return res.render("groups/group", {
+				user: req.session.user,
 				group: group,
 				group_id: id,
 				group_name: group.groupName,
@@ -1108,6 +1114,7 @@ router
 			let group = await groupsData.getGroupByID(req.params.id);
 			return res.render("groups/createExpense", {
 				title: "Create Expense",
+				user: req.session.user,
 				groupId: req.params.id,
 				group: group
 			});
@@ -1310,6 +1317,7 @@ router
 
 			return res.render("groups/editExpense", {
 				title: "Edit Expense",
+				user: req.session.user,
 				group: group,
 				groupId: groupId,
 				expense: {
@@ -1500,6 +1508,7 @@ router
 
 			res.render("groups/addMember", {
 				title: "Add Member",
+				user: req.session.user,
 				group: group
 			});
 		} catch (e) {
@@ -1605,6 +1614,7 @@ router
 
 			res.render("groups/removeMember", {
 				title: "Remove Member",
+				user: req.session.user,
 				group: group,
 				members: group.groupMembers
 			});

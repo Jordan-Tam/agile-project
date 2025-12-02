@@ -63,6 +63,7 @@ router.get("/", requireAuth, async (req, res) => {
 
 		res.render("logs", {
 			title: "Change Logs",
+			user: req.session.user,
 			groups: groups,
 			hasGroups: groups.length > 0,
 			searchTerm: searchTerm || "",
@@ -100,6 +101,7 @@ router.post("/", requireAuth, async (req, res) => {
 
 		res.render("logs", {
 			title: "Change Logs",
+			user: req.session.user,
 			groups: groups,
 			hasGroups: groups.length > 0,
 			searchTerm: searchTerm || "",
@@ -556,6 +558,7 @@ router.get("/:groupId", requireAuth, async (req, res) => {
 
 		res.render("logs/groupExpenses", {
 			title: `Expenses - ${group.groupName}`,
+			user: req.session.user,
 			group: group,
 			groupStatus: groupStatus,
 			expenses: formattedExpenses,
@@ -1015,6 +1018,7 @@ router.post("/:groupId", requireAuth, async (req, res) => {
 
 		res.render("logs/groupExpenses", {
 			title: `Expenses - ${group.groupName}`,
+			user: req.session.user,
 			group: group,
 			groupStatus: groupStatus,
 			expenses: formattedExpenses,
@@ -1057,6 +1061,7 @@ router.get("/:groupId/change-logs", requireAuth, async (req, res) => {
 
 		res.render("logs/groupChangeLogs", {
 			title: `Group Change Logs - ${group.groupName}`,
+			user: req.session.user,
 			group: group,
 			groupStatus: groupStatus,
 			logs: logs,
@@ -1105,6 +1110,7 @@ router.get("/:groupId/expenses/:expenseId/change-logs", requireAuth, async (req,
 
 		res.render("logs/expenseChangeLogs", {
 			title: `Expense Change Logs - ${expenseName}`,
+			user: req.session.user,
 			group: group,
 			groupStatus: groupStatus,
 			expenseId: expenseId,
