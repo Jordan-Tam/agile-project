@@ -2,6 +2,7 @@ import {Router} from "express";
 import xss from "xss";
 import usersData from "../data/users.js";
 import groupsData from "../data/groups.js";
+import expensesData from "../data/expenses.js";
 import {requireAuth} from "../middleware.js";
 import {
     checkId,
@@ -52,6 +53,16 @@ router
         totalOwes = Number(totalOwes.toFixed(2));
         totalOwedTo = Number(totalOwedTo.toFixed(2));
 
+        // Get payment statistics
+        let paymentStats = null;
+        let statsError = null;
+        try {
+            paymentStats = await expensesData.getUserPaymentStats(userId);
+        } catch (e) {
+            console.error("Error loading payment stats:", e);
+            statsError = "Failed to load payment statistics";
+        }
+
         const success = req.query.success === 'true'
             ? 'Profile updated successfully!'
             : null;
@@ -62,6 +73,8 @@ router
             userPinnedGroups: pinned,
             totalOwes,
             totalOwedTo,
+            paymentStats,
+            statsError,
             success
         });
     } catch (e) {
@@ -70,7 +83,9 @@ router
             user: req.session.user,
             userGroups: [],
             totalOwes: 0,
-            totalOwedTo: 0
+            totalOwedTo: 0,
+            paymentStats: null,
+            statsError: "Failed to load profile data"
         });
     }
 })

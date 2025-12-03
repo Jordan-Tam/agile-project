@@ -79,6 +79,15 @@ app.engine(
 				if (!dateString) return "";
 				const date = new Date(dateString);
 				return date.toLocaleString();
+			},
+			or: function (a, b) {
+				return a || b;
+			},
+			gt: function (a, b) {
+				return a > b;
+			},
+			lt: function (a, b) {
+				return a < b;
 			}
 		}
 	})

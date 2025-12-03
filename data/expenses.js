@@ -551,6 +551,65 @@ const exportedMethods = {
 			totalExpenses,
 			totalCost: parseFloat(totalCost.toFixed(2))
 		};
+	},
+
+	// Get payment statistics for a user
+	async getUserPaymentStats(userId) {
+		userId = checkId(userId, "User", "getUserPaymentStats");
+
+		const userGroups = await groupsData.getGroupsForUser(userId);
+
+		let totalPaid = 0; // Amount user has paid toward expenses
+		let totalEarned = 0; // Amount user has received (where user was payee)
+		let paymentCount = 0; // Number of payments made by user
+		let earningCount = 0; // Number of payments received by user
+
+		for (const group of userGroups) {
+			const expenses = group.expenses || [];
+
+			for (const expense of expenses) {
+				const payments = expense.payments || [];
+
+				// Calculate amount user has paid
+				const userPayment = payments.find(p => {
+					const payerId = typeof p.payer === "object" ? p.payer.toString() : p.payer;
+					return payerId === userId;
+				});
+
+				if (userPayment && userPayment.paid > 0) {
+					totalPaid += userPayment.paid;
+					paymentCount++;
+				}
+
+				// Calculate amount user has earned (if user is the payee)
+				const payeeId = typeof expense.payee === "object"
+					? expense.payee.toString()
+					: expense.payee;
+
+				if (payeeId === userId) {
+					// Sum all payments made toward this expense (excluding user's own payment)
+					for (const payment of payments) {
+						const payerId = typeof payment.payer === "object"
+							? payment.payer.toString()
+							: payment.payer;
+
+						// Only count payments from others (not from user to themselves)
+						if (payerId !== userId && payment.paid > 0) {
+							totalEarned += payment.paid;
+							earningCount++;
+						}
+					}
+				}
+			}
+		}
+
+		return {
+			totalPaid: parseFloat(totalPaid.toFixed(2)),
+			totalEarned: parseFloat(totalEarned.toFixed(2)),
+			paymentCount,
+			earningCount,
+			netBalance: parseFloat((totalEarned - totalPaid).toFixed(2))
+		};
 	}
 };
 

@@ -29,6 +29,42 @@
                         <p><strong>Total You Owe:</strong> ${{totalOwes}}</p>
                         <p><strong>Total Owed To You:</strong> ${{totalOwedTo}}</p>
                     </div>
+
+                    <!-- Payment Statistics Section -->
+                    <div class="mb-3 mt-4">
+                        <h5>Payment Statistics</h5>
+                        {{#if statsError}}
+                            <div class="alert alert-danger" role="alert">
+                                {{statsError}}
+                            </div>
+                        {{else if paymentStats}}
+                            {{#if (or paymentStats.paymentCount paymentStats.earningCount)}}
+                                <div class="card">
+                                    <div class="card-body">
+                                        <p class="mb-2"><strong>Total Paid:</strong> ${{paymentStats.totalPaid}}</p>
+                                        <p class="mb-2"><small class="text-muted">{{paymentStats.paymentCount}} payment(s) made</small></p>
+                                        <p class="mb-2"><strong>Total Earned:</strong> ${{paymentStats.totalEarned}}</p>
+                                        <p class="mb-2"><small class="text-muted">{{paymentStats.earningCount}} payment(s) received</small></p>
+                                        <hr>
+                                        <p class="mb-0">
+                                            <strong>Net Balance:</strong>
+                                            <span class="{{#if (gt paymentStats.netBalance 0)}}text-success{{else if (lt paymentStats.netBalance 0)}}text-danger{{else}}text-muted{{/if}}">
+                                                ${{paymentStats.netBalance}}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            {{else}}
+                                <div class="alert alert-info" role="alert">
+                                    No payment data available yet.
+                                </div>
+                            {{/if}}
+                        {{else}}
+                            <div class="alert alert-info" role="alert">
+                                No payment data available yet.
+                            </div>
+                        {{/if}}
+                    </div>
                 </div>
 
                 <!-- Right Column: Groups -->

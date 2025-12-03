@@ -284,6 +284,42 @@ export async function seed() {
         console.error("Error logging expense creation:", logError);
     }
 
+    //! ADD PAYMENTS TO EXPENSES
+    console.log("Adding payment data...");
+
+    // John Doe pays $50 toward the Shopping Spree expense (his share is $67.995)
+    await expensesData.addPayment(
+        ROOMMATES._id.toString(),
+        ROOMMATES_EXPENSE_1._id.toString(),
+        JOHN_DOE._id.toString(),
+        50.00
+    );
+
+    // Jane Smith pays her full share of the Shopping Spree
+    await expensesData.addPayment(
+        ROOMMATES._id.toString(),
+        ROOMMATES_EXPENSE_1._id.toString(),
+        JANE_SMITH._id.toString(),
+        67.99
+    );
+
+    // Doug pays partial amount toward Pizza party (his share is $6.33)
+    await expensesData.addPayment(
+        ROOMMATES._id.toString(),
+        ROOMMATES_EXPENSE_2._id.toString(),
+        DOUG_THE_DOG._id.toString(),
+        3.00
+    );
+
+    // John Doe pays partial amount toward Pizza party
+    await expensesData.addPayment(
+        ROOMMATES._id.toString(),
+        ROOMMATES_EXPENSE_2._id.toString(),
+        JOHN_DOE._id.toString(),
+        6.33
+    );
+
+    console.log("✓ Added payment data for testing statistics");
     console.log("Done seeding database.");
 
     await closeConnection();
