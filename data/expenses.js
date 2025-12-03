@@ -24,8 +24,21 @@ const exportedMethods = {
 		const numPayers = expense.payers.length;
 		if (numPayers === 0) throw "Expense has no payers";
 
-		// amountPerPayer is the share each payer should pay (based on original cost)
-		const amountPerPayer = parseFloat((expense.cost / numPayers).toFixed(2));
+		// Calculate amountPerPayer based on distribution type
+		let amountPerPayer;
+		if (expense.distributionType === "specific" && expense.payerShares) {
+			// Find this payer's specific amount
+			const payerShare = expense.payerShares.find(
+				(p) => (typeof p.payer === "object" ? p.payer.toString() : p.payer) === payerId
+			);
+			if (!payerShare) {
+				throw `Error: Payer ${payerId} not found in expense payerShares.`;
+			}
+			amountPerPayer = parseFloat(payerShare.owed.toFixed(2));
+		} else {
+			// Default to evenly split (for backward compatibility)
+			amountPerPayer = parseFloat((expense.cost / numPayers).toFixed(2));
+		}
 
 		// Find or default existing payments map for payer
 		const payments = expense.payments || [];
@@ -86,7 +99,9 @@ const exportedMethods = {
 		deadline,
 		payee,
 		payers,
-		fileInfo = null
+		fileInfo = null,
+		distributionType = "evenly",
+		payerAmounts = null
 	) {
 		// Input validation
 		group = checkId(group.toString(), "Group", "createExpense");
@@ -96,6 +111,11 @@ const exportedMethods = {
 		payee = checkId(payee.toString(), "Payee", "createExpense");
 		for (let payer of payers)
 			checkId(payer.toString(), "Payer", "createExpense");
+
+		// Validate distributionType
+		if (distributionType !== "evenly" && distributionType !== "specific") {
+			throw `Error: distributionType must be "evenly" or "specific".`;
+		}
 
 		// Check that the group exists
 		const groupDoc = await groupsData.getGroupByID(group);
@@ -121,6 +141,40 @@ const exportedMethods = {
 			}
 		}
 
+		// Validate specific distribution
+		let payerShares = null;
+		if (distributionType === "specific") {
+			if (!payerAmounts || typeof payerAmounts !== "object") {
+				throw `Error: payerAmounts is required when distributionType is "specific".`;
+			}
+
+			// Build payerShares array and validate
+			payerShares = payers.map((payerId) => {
+				const payerIdStr = typeof payerId === "object" ? payerId.toString() : payerId.toString();
+				const amount = payerAmounts[payerIdStr];
+				
+				if (amount === undefined || amount === null) {
+					throw `Error: Amount required for payer ${payerIdStr}.`;
+				}
+
+				const amountNum = parseFloat(amount);
+				if (isNaN(amountNum) || amountNum < 0) {
+					throw `Error: Invalid amount for payer ${payerIdStr}.`;
+				}
+
+				return {
+					payer: new ObjectId(payerId),
+					owed: parseFloat(amountNum.toFixed(2))
+				};
+			});
+
+			// Validate that sum equals total cost
+			const sum = payerShares.reduce((acc, p) => acc + p.owed, 0);
+			if (Math.abs(sum - cost) > 0.01) {
+				throw `Error: Sum of payer amounts (${sum.toFixed(2)}) must equal total cost (${cost.toFixed(2)}).`;
+			}
+		}
+
 		// Create the new expense object
 		const newExpense = {
 			_id: new ObjectId(),
@@ -130,12 +184,18 @@ const exportedMethods = {
 			deadline,
 			payee,
 			payers,
+			distributionType: distributionType || "evenly",
 			payments: payers.map((p) => ({
 				payer: new ObjectId(typeof p === "object" ? p.toString() : p),
 				paid: 0
 			})),
 			archived: false // New expenses are not archived by default
 		};
+
+		// Add payerShares if specific distribution
+		if (distributionType === "specific" && payerShares && payerShares.length > 0) {
+			newExpense.payerShares = payerShares;
+		}
 
 		// Add file info if provided
 		if (fileInfo) {
@@ -148,16 +208,26 @@ const exportedMethods = {
 			};
 		}
 
+		// Ensure distributionType is ALWAYS set
+		if (!newExpense.distributionType) {
+			newExpense.distributionType = "evenly";
+		}
+		
+		// For specific distribution, ensure payerShares exists
+		if (newExpense.distributionType === "specific" && !newExpense.payerShares) {
+			throw "ERROR: distributionType is 'specific' but payerShares is missing! Cannot save expense.";
+		}
+
 		// Add to the group's expenses array
 		const groupsCollection = await groups();
-		//console.log("About to insert expense:", JSON.stringify(newExpense, null, 2));
-		//console.log("Group members:", JSON.stringify(groupDoc.groupMembers, null, 2));
+		
+		// MongoDB update operation
 		const updateResult = await groupsCollection.findOneAndUpdate(
 			{ _id: new ObjectId(group) },
 			{ $push: { expenses: newExpense } },
 			{ returnDocument: "after", returnOriginal: false }
 		);
-		//console.log("Update result:", updateResult); // Add this debug line
+		
 		if (!updateResult) throw "Error: Failed to insert expense.";
 
 		// Return the inserted expense document
@@ -214,7 +284,7 @@ const exportedMethods = {
 	},
 
 	// Edit Expense
-	async editExpense(groupId, expenseId, name, cost, deadline, payee, payers) {
+	async editExpense(groupId, expenseId, name, cost, deadline, payee, payers, distributionType = "evenly", payerAmounts = null) {
 		// Input validation
 		groupId = checkId(groupId, "Group", "editExpense");
 		expenseId = checkId(expenseId, "Expense", "editExpense");
@@ -223,6 +293,11 @@ const exportedMethods = {
 		deadline = checkDate(deadline, "Deadline", "editExpense");
 		payee = checkId(payee.toString(), "Payee", "editExpense");
 		for (let payer of payers) checkId(payer.toString(), "Payer", "editExpense");
+
+		// Validate distributionType
+		if (distributionType !== "evenly" && distributionType !== "specific") {
+			throw `Error: distributionType must be "evenly" or "specific".`;
+		}
 
 		// Verify Group exists
 		const groupDoc = await groupsData.getGroupByID(groupId);
@@ -249,18 +324,60 @@ const exportedMethods = {
 			throw `Error: Expense ${expenseId} not found in group "${groupDoc.groupName}".`;
 		}
 
+		// Validate and build payerShares for specific distribution
+		let payerShares = null;
+		let updateFields = {
+			"expenses.$.name": name,
+			"expenses.$.cost": cost,
+			"expenses.$.deadline": deadline,
+			"expenses.$.payee": payee,
+			"expenses.$.payers": payers,
+			"expenses.$.distributionType": distributionType || "evenly"
+		};
+
+		if (distributionType === "specific") {
+			if (!payerAmounts || typeof payerAmounts !== "object") {
+				throw `Error: payerAmounts is required when distributionType is "specific".`;
+			}
+
+			// Build payerShares array and validate
+			payerShares = payers.map((payerId) => {
+				const payerIdStr = typeof payerId === "object" ? payerId.toString() : payerId.toString();
+				const amount = payerAmounts[payerIdStr];
+				
+				if (amount === undefined || amount === null) {
+					throw `Error: Amount required for payer ${payerIdStr}.`;
+				}
+
+				const amountNum = parseFloat(amount);
+				if (isNaN(amountNum) || amountNum < 0) {
+					throw `Error: Invalid amount for payer ${payerIdStr}.`;
+				}
+
+				return {
+					payer: new ObjectId(payerId),
+					owed: parseFloat(amountNum.toFixed(2))
+				};
+			});
+
+			// Validate that sum equals total cost
+			const sum = payerShares.reduce((acc, p) => acc + p.owed, 0);
+			if (Math.abs(sum - cost) > 0.01) {
+				throw `Error: Sum of payer amounts (${sum.toFixed(2)}) must equal total cost (${cost.toFixed(2)}).`;
+			}
+
+			updateFields["expenses.$.payerShares"] = payerShares;
+		} else {
+			// Remove payerShares if switching to evenly
+			updateFields["expenses.$.payerShares"] = null;
+		}
+
 		// Update the expense fields
 		const groupsCollection = await groups();
 		const updateResult = await groupsCollection.findOneAndUpdate(
 			{ _id: new ObjectId(groupId), "expenses._id": new ObjectId(expenseId) },
 			{
-				$set: {
-					"expenses.$.name": name,
-					"expenses.$.cost": cost,
-					"expenses.$.deadline": deadline,
-					"expenses.$.payee": payee,
-					"expenses.$.payers": payers
-				}
+				$set: updateFields
 			},
 			{ returnDocument: "after", returnOriginal: false }
 		);

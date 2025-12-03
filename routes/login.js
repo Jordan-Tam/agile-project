@@ -47,7 +47,7 @@ router.post("/", async (req, res) => {
 			userId: user.userId,
 			signupDate: user.signupDate,
 			lastLogin: new Date().toLocaleString(),
-			theme: user.theme || null
+			theme: user.theme || 'light' // Default to 'light' if null/undefined
 		};
 
 		// Redirect to groups page or home

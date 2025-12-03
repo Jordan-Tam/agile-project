@@ -530,9 +530,8 @@ router.route("/:id/export-pdf").get(requireAuth, async (req, res) => {
 				(payerId) => userMap[payerId] || payerId
 			);
 
-			const amountPerPayer = parseFloat(
-				(expense.cost / expense.payers.length).toFixed(2)
-			);
+			// Determine distribution type (default to evenly for backward compatibility)
+			const distributionType = expense.distributionType || "evenly";
 
 			// Build payments lookup
 			const paymentsLookup = {};
@@ -547,11 +546,29 @@ router.route("/:id/export-pdf").get(requireAuth, async (req, res) => {
 					typeof payerId === "object" ? payerId.toString() : payerId;
 				const name = userMap[idStr] || idStr;
 				const paidSoFar = paymentsLookup[idStr] || 0;
+				
+				// Calculate amount owed based on distribution type
+				let amountOwed;
+				if (distributionType === "specific" && expense.payerShares) {
+					const share = expense.payerShares.find((s) => {
+						const sharePayerId = typeof s.payer === "object" ? s.payer.toString() : s.payer.toString();
+						return sharePayerId === idStr;
+					});
+					amountOwed = share ? share.owed : 0;
+				} else {
+					amountOwed = expense.cost / expense.payers.length;
+				}
+				
 				const owed = parseFloat(
-					Math.max(0, amountPerPayer - paidSoFar).toFixed(2)
+					Math.max(0, amountOwed - paidSoFar).toFixed(2)
 				);
 				return { _id: idStr, name, owed };
 			});
+
+			// Average amount per payer for display (backward compatibility)
+			const amountPerPayer = parseFloat(
+				(expense.cost / expense.payers.length).toFixed(2)
+			);
 
 			// Amount current user owes
 			const currentUserId = req.session.user._id.toString();
@@ -562,8 +579,20 @@ router.route("/:id/export-pdf").get(requireAuth, async (req, res) => {
 					.includes(currentUserId)
 			) {
 				const paid = paymentsLookup[currentUserId] || 0;
+				
+				let userAmountOwed;
+				if (distributionType === "specific" && expense.payerShares) {
+					const share = expense.payerShares.find((s) => {
+						const sharePayerId = typeof s.payer === "object" ? s.payer.toString() : s.payer.toString();
+						return sharePayerId === currentUserId;
+					});
+					userAmountOwed = share ? share.owed : 0;
+				} else {
+					userAmountOwed = expense.cost / expense.payers.length;
+				}
+				
 				amountOwedForCurrentUser = parseFloat(
-					Math.max(0, amountPerPayer - paid).toFixed(2)
+					Math.max(0, userAmountOwed - paid).toFixed(2)
 				);
 			}
 
@@ -750,9 +779,8 @@ router
 						(payerId) => userMap[payerId] || payerId
 					);
 
-					const amountPerPayer = parseFloat(
-						(expense.cost / expense.payers.length).toFixed(2)
-					);
+					// Determine distribution type (default to evenly for backward compatibility)
+					const distributionType = expense.distributionType || "evenly";
 
 					// Build payments lookup
 					const paymentsLookup = {};
@@ -762,17 +790,38 @@ router
 						paymentsLookup[pid] = parseFloat(Number(p.paid || 0).toFixed(2));
 					});
 
-					// Build payerShares
+					// Build payerShares based on distribution type
 					const payerShares = expense.payers.map((payerId) => {
 						const idStr =
 							typeof payerId === "object" ? payerId.toString() : payerId;
 						const name = userMap[idStr] || idStr;
 						const paidSoFar = paymentsLookup[idStr] || 0;
+						
+						// Calculate amount owed based on distribution type
+						let amountOwed;
+						if (distributionType === "specific" && expense.payerShares) {
+							// Find this payer's specific share
+							const share = expense.payerShares.find((s) => {
+								const sharePayerId = typeof s.payer === "object" ? s.payer.toString() : s.payer.toString();
+								return sharePayerId === idStr;
+							});
+							amountOwed = share ? share.owed : 0;
+						} else {
+							// Evenly split (default)
+							amountOwed = expense.cost / expense.payers.length;
+						}
+						
 						const owed = parseFloat(
-							Math.max(0, amountPerPayer - paidSoFar).toFixed(2)
+							Math.max(0, amountOwed - paidSoFar).toFixed(2)
 						);
 						return { _id: idStr, name, owed };
 					});
+
+					// Calculate average amount per payer (for display purposes)
+					// This is used for backward compatibility, but actual amounts come from payerShares
+					const amountPerPayer = distributionType === "specific" && expense.payerShares
+						? parseFloat((expense.cost / expense.payers.length).toFixed(2)) // Average for display
+						: parseFloat((expense.cost / expense.payers.length).toFixed(2));
 
 					// Calculate current user owed
 					const currentUserId = req.session.user._id.toString();
@@ -783,8 +832,21 @@ router
 							.includes(currentUserId)
 					) {
 						const paid = paymentsLookup[currentUserId] || 0;
+						
+						// Calculate what user owes based on distribution type
+						let userAmountOwed;
+						if (distributionType === "specific" && expense.payerShares) {
+							const share = expense.payerShares.find((s) => {
+								const sharePayerId = typeof s.payer === "object" ? s.payer.toString() : s.payer.toString();
+								return sharePayerId === currentUserId;
+							});
+							userAmountOwed = share ? share.owed : 0;
+						} else {
+							userAmountOwed = expense.cost / expense.payers.length;
+						}
+						
 						amountOwedForCurrentUser = parseFloat(
-							Math.max(0, amountPerPayer - paid).toFixed(2)
+							Math.max(0, userAmountOwed - paid).toFixed(2)
 						);
 					}
 
@@ -801,6 +863,7 @@ router
 						numPayers: expense.payers.length,
 						payerShares, // REQUIRED for modal display
 						amountOwedForCurrentUser, // REQUIRED to enable "Update Balance" button
+						distributionType,
 						file: expense.file
 					};
 				}); // Calculate balances (who owes whom)
@@ -1126,13 +1189,107 @@ router
 	.post(requireAuth, upload.single("expenseFile"), async (req, res) => {
 		// Get path and request body parameters.
 		let groupId = req.params.id;
-		let { name, cost, deadline, payee, payers } = req.body;
+		let { name, cost, deadline, payee, payers, distributionType, payerAmounts } = req.body;
+
+		// Debug: Log what we received
+		console.log("=== CREATE EXPENSE ROUTE DEBUG ===");
+		console.log("req.body:", JSON.stringify(req.body, null, 2));
+		console.log("distributionType from req.body (raw):", distributionType);
+		console.log("typeof distributionType:", typeof distributionType);
+		console.log("isArray:", Array.isArray(distributionType));
+		
+		// FIX: Handle case where distributionType comes as an array (form submission issue)
+		if (Array.isArray(distributionType)) {
+			console.warn("WARNING: distributionType is an array! Taking first value:", distributionType[0]);
+			distributionType = distributionType[0] || "evenly";
+		}
+		
+		// Also handle payee if it's an array
+		if (Array.isArray(payee)) {
+			console.warn("WARNING: payee is an array! Taking first value:", payee[0]);
+			payee = payee[0];
+		}
+		
+		console.log("Final distributionType:", distributionType);
+		console.log("req.body keys:", Object.keys(req.body));
+		console.log("payers:", payers);
+		
+		// Default distributionType to "evenly" if not provided
+		if (!distributionType || distributionType === "undefined" || distributionType === "" || distributionType === null) {
+			console.warn("WARNING: distributionType is missing/empty, defaulting to 'evenly'");
+			distributionType = "evenly";
+		} else {
+			console.log("✓ distributionType is set to:", distributionType);
+		}
+
+		// Parse payerAmounts from form data
+		// Multer with multipart/form-data parses "payerAmounts[<id>]" as req.body.payerAmounts[<id>]
+		// OR as req.body.payerAmounts = { <id>: value }
+		let payerAmountsObj = null;
+		
+		// CRITICAL: Check distributionType is actually "specific" (not array, not undefined)
+		if (distributionType === "specific") {
+			console.log("Processing 'specific' distribution...");
+			payerAmountsObj = {};
+			
+			// Check if req.body.payerAmounts is already an object (multer parses bracket notation this way)
+			if (req.body.payerAmounts && typeof req.body.payerAmounts === "object" && !Array.isArray(req.body.payerAmounts)) {
+				// This is the most likely format - multer parses payerAmounts[<id>] as nested object
+				payerAmountsObj = req.body.payerAmounts;
+				console.log("✓ Found payerAmounts as nested object:", payerAmountsObj);
+			} 
+			// Fallback: check flat keys with bracket notation
+			else if (Array.isArray(payers)) {
+				console.log("Trying to parse payerAmounts from flat keys...");
+				for (const payerId of payers) {
+					const payerIdStr = typeof payerId === "object" ? payerId.toString() : payerId.toString();
+					
+					// Try bracket notation as flat key: "payerAmounts[<id>]"
+					const bracketKey = `payerAmounts[${payerIdStr}]`;
+					if (req.body[bracketKey] !== undefined) {
+						payerAmountsObj[payerIdStr] = req.body[bracketKey];
+						console.log(`Found ${bracketKey} = ${req.body[bracketKey]}`);
+						continue;
+					}
+					
+					// Try all keys matching the pattern
+					for (const key of Object.keys(req.body)) {
+						if (key.includes("payerAmounts")) {
+							const match = key.match(/payerAmounts\[(.+)\]/);
+							if (match && match[1] === payerIdStr) {
+								payerAmountsObj[payerIdStr] = req.body[key];
+								console.log(`Found ${key} = ${req.body[key]}`);
+								break;
+							}
+						}
+					}
+				}
+				console.log("Parsed payerAmountsObj from flat keys:", payerAmountsObj);
+			}
+			
+			console.log("Final payerAmountsObj:", payerAmountsObj);
+			console.log("payerAmountsObj keys:", payerAmountsObj ? Object.keys(payerAmountsObj) : "null");
+			console.log("payerAmountsObj is empty?", payerAmountsObj ? Object.keys(payerAmountsObj).length === 0 : "null");
+			
+			// CRITICAL CHECK: If distributionType is specific but payerAmountsObj is empty, that's a problem
+			if (!payerAmountsObj || Object.keys(payerAmountsObj).length === 0) {
+				console.error("!!! ERROR: distributionType is 'specific' but payerAmountsObj is EMPTY !!!");
+				console.error("This means the form data is not being parsed correctly!");
+			}
+		} else {
+			console.log("distributionType is 'evenly', so payerAmountsObj will be null (expected)");
+		}
 
 		// Input validation.
 		try {
 			groupId = checkId(groupId, "Group", "POST /:id/expense/new");
 			name = checkString(name, "Name", "POST /:id/expense/new");
 			cost = checkCost(Number(cost), "POST /:id/expense/new");
+
+			// Validate distributionType
+			if (distributionType !== "evenly" && distributionType !== "specific") {
+				throw "Invalid distribution type. Must be 'evenly' or 'specific'.";
+			}
 
 			// Handle date format conversion if needed
 			if (deadline.includes("-")) {
@@ -1144,6 +1301,34 @@ router
 			payee = checkId(payee.toString(), "Payee", "POST /:id/expense/new");
 			for (let payer of payers) {
 				checkId(payer.toString(), "Payer", "POST /:id/expense/new");
+			}
+
+			// Validate specific distribution
+			if (distributionType === "specific") {
+				if (!payerAmountsObj || Object.keys(payerAmountsObj).length === 0) {
+					throw "Payer amounts are required when using specific distribution.";
+				}
+
+				// Ensure all payers have amounts
+				for (let payer of payers) {
+					const payerIdStr = payer.toString();
+					if (!payerAmountsObj[payerIdStr] && payerAmountsObj[payerIdStr] !== 0) {
+						throw `Amount required for all selected payers. Missing amount for payer: ${payerIdStr}`;
+					}
+					const amount = parseFloat(payerAmountsObj[payerIdStr]);
+					if (isNaN(amount) || amount < 0) {
+						throw `Invalid amount for payer: ${payerIdStr}`;
+					}
+				}
+
+				// Validate sum equals total cost
+				const sum = payers.reduce((acc, payer) => {
+					const payerIdStr = payer.toString();
+					return acc + parseFloat(payerAmountsObj[payerIdStr] || 0);
+				}, 0);
+				if (Math.abs(sum - cost) > 0.01) {
+					throw `Sum of payer amounts (${sum.toFixed(2)}) must equal total cost (${cost.toFixed(2)}).`;
+				}
 			}
 		} catch (e) {
 			// If validation fails and a file was uploaded, delete it
@@ -1166,7 +1351,9 @@ router
 				form: {
 					name: req.body?.name ?? "",
 					cost: req.body?.cost ?? "",
-					deadline: req.body?.deadline ?? ""
+					deadline: req.body?.deadline ?? "",
+					distributionType: distributionType || "evenly",
+					payerAmounts: payerAmountsObj
 				}
 			});
 		}
@@ -1184,15 +1371,23 @@ router
 
 		// Call data function to add the expense.
 		try {
-			await expensesData.createExpense(
+			console.log("=== CALLING createExpense ===");
+			console.log("Passing distributionType:", distributionType);
+			console.log("Passing payerAmountsObj:", payerAmountsObj);
+			
+			const result = await expensesData.createExpense(
 				groupId,
 				name,
 				cost,
 				deadline,
 				payee,
 				payers,
-				fileInfo
+				fileInfo,
+				distributionType,
+				payerAmountsObj
 			);
+			
+			console.log("createExpense returned:", result);
 
 			// Get the created expense from the group
 			const group = await groupsData.getGroupByID(groupId);
@@ -1315,6 +1510,15 @@ router
 				userMap[user._id.toString()] = `${user.firstName} ${user.lastName}`;
 			});
 
+			// Build payerShares map for specific distribution
+			const payerSharesMap = {};
+			if (expense.distributionType === "specific" && expense.payerShares) {
+				expense.payerShares.forEach((share) => {
+					const payerIdStr = typeof share.payer === "object" ? share.payer.toString() : share.payer.toString();
+					payerSharesMap[payerIdStr] = share.owed;
+				});
+			}
+
 			return res.render("groups/editExpense", {
 				title: "Edit Expense",
 				user: req.session.user,
@@ -1326,7 +1530,9 @@ router
 					cost: expense.cost,
 					deadline: expense.deadline,
 					payee: expense.payee,
-					payers: expense.payers
+					payers: expense.payers,
+					distributionType: expense.distributionType || "evenly",
+					payerShares: payerSharesMap
 				},
 				groupMembers: group.groupMembers
 			});
@@ -1340,7 +1546,37 @@ router
 		// Get path and request body parameters.
 		let groupId = req.params.groupId;
 		let expenseId = req.params.expenseId;
-		let { name, cost, deadline, payee, payers } = req.body;
+		let { name, cost, deadline, payee, payers, distributionType, payerAmounts } = req.body;
+
+		// Default distributionType to "evenly" if not provided
+		if (!distributionType) {
+			distributionType = "evenly";
+		}
+
+		// Parse payerAmounts if it's a string (from form submission)
+		let payerAmountsObj = null;
+		if (distributionType === "specific") {
+			if (!payerAmounts || typeof payerAmounts !== "object") {
+				// Try to parse from form data
+				payerAmountsObj = {};
+				if (Array.isArray(payers)) {
+					for (const payerId of payers) {
+						const payerIdStr = typeof payerId === "object" ? payerId.toString() : payerId.toString();
+						const amountKey = `payerAmounts[${payerIdStr}]`;
+						if (req.body[amountKey] !== undefined) {
+							payerAmountsObj[payerIdStr] = req.body[amountKey];
+						} else if (req.body.payerAmounts && req.body.payerAmounts[payerIdStr] !== undefined) {
+							payerAmountsObj[payerIdStr] = req.body.payerAmounts[payerIdStr];
+						}
+					}
+				}
+				if (Object.keys(payerAmountsObj).length === 0 && req.body.payerAmounts) {
+					payerAmountsObj = req.body.payerAmounts;
+				}
+			} else {
+				payerAmountsObj = payerAmounts;
+			}
+		}
 
 		// Input validation.
 		try {
@@ -1356,6 +1592,11 @@ router
 			);
 			name = checkString(name, "Name", "PUT /:groupId/expense/:expenseId/edit");
 			cost = checkCost(cost, "PUT /:groupId/expense/:expenseId/edit");
+
+			// Validate distributionType
+			if (distributionType !== "evenly" && distributionType !== "specific") {
+				throw "Invalid distribution type. Must be 'evenly' or 'specific'.";
+			}
 
 			// Handle date format conversion if needed
 			if (deadline.includes("-")) {
@@ -1386,6 +1627,34 @@ router
 					"Payer",
 					"PUT /:groupId/expense/:expenseId/edit"
 				);
+			}
+
+			// Validate specific distribution
+			if (distributionType === "specific") {
+				if (!payerAmountsObj || Object.keys(payerAmountsObj).length === 0) {
+					throw "Payer amounts are required when using specific distribution.";
+				}
+
+				// Ensure all payers have amounts
+				for (let payer of payers) {
+					const payerIdStr = payer.toString();
+					if (!payerAmountsObj[payerIdStr] && payerAmountsObj[payerIdStr] !== 0) {
+						throw `Amount required for all selected payers. Missing amount for payer: ${payerIdStr}`;
+					}
+					const amount = parseFloat(payerAmountsObj[payerIdStr]);
+					if (isNaN(amount) || amount < 0) {
+						throw `Invalid amount for payer: ${payerIdStr}`;
+					}
+				}
+
+				// Validate sum equals total cost
+				const sum = payers.reduce((acc, payer) => {
+					const payerIdStr = payer.toString();
+					return acc + parseFloat(payerAmountsObj[payerIdStr] || 0);
+				}, 0);
+				if (Math.abs(sum - cost) > 0.01) {
+					throw `Sum of payer amounts (${sum.toFixed(2)}) must equal total cost (${cost.toFixed(2)}).`;
+				}
 			}
 		} catch (e) {
 			return res.status(400).json({ error: e });
@@ -1428,7 +1697,9 @@ router
 				cost,
 				deadline,
 				payee,
-				payers
+				payers,
+				distributionType,
+				payerAmountsObj
 			);
 
 			// Determine what changed
@@ -1820,7 +2091,22 @@ router.route("/:groupId/updateBalance").post(requireAuth, async (req, res) => {
 		}
 
 		const numPayers = expense.payers.length;
-		const amountPerPayer = parseFloat((expense.cost / numPayers).toFixed(2));
+		
+		// Calculate amount per payer based on distribution type
+		const distributionType = expense.distributionType || "evenly";
+		let amountPerPayer;
+		if (distributionType === "specific" && expense.payerShares) {
+			const share = expense.payerShares.find((s) => {
+				const sharePayerId = typeof s.payer === "object" ? s.payer.toString() : s.payer.toString();
+				return sharePayerId === payerId;
+			});
+			if (!share) {
+				return res.status(400).json({ error: "Payer not found in expense payerShares." });
+			}
+			amountPerPayer = parseFloat(share.owed.toFixed(2));
+		} else {
+			amountPerPayer = parseFloat((expense.cost / numPayers).toFixed(2));
+		}
 
 		// Find already paid for this payer
 		const paymentsLookup = {};

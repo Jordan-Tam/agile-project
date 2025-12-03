@@ -7,6 +7,7 @@ import profileRoutes from "./profile.js";
 import logsRoutes from "./logs.js";
 import groupsData from "../data/groups.js";
 import expensesData from "../data/expenses.js";
+import usersData from "../data/users.js";
 import {
   rewriteUnsupportedBrowserMethods,
   requireAuth
@@ -48,8 +49,8 @@ const constructorMethod = (app) => {
 
       await usersData.updateTheme(req.session.user._id, theme);
       
-      // Update session
-      req.session.user.theme = theme;
+      // Update session (default to 'light' if null)
+      req.session.user.theme = theme || 'light';
       
       // Save session explicitly to ensure it persists
       req.session.save((err) => {

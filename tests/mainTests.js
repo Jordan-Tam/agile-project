@@ -21,6 +21,7 @@ import { runArchiveTests } from "./archiveTests.js";
 import { runPostsTests } from "./postTests.js";
 import { runExpenseGraphTests } from "./expenseGraphTests.js";
 import { runPinTests } from "./pinTests.js";
+import { runSplitExpenseTests } from "./splitExpensesTest.js";
 
 const BASE = "http://localhost:3000";
 let serverProcess = null;
@@ -215,6 +216,9 @@ async function run() {
 		console.log("\n=== Running Expense Graph Tests ===");
 		await runExpenseGraphTests();
 
+		console.log("\n=== Running Split Expense Tests ===");
+		await runSplitExpenseTests();
+
 		// Run the inline group data tests
 		//await runInlineGroupTests();
 
@@ -243,6 +247,7 @@ async function run() {
 		console.log("Archive tests -> see above logs");
 		console.log("Posts tests -> see above logs");
 		console.log("Expense Graph tests -> see above logs");
+		console.log("Split Expense tests -> see above logs");
 		//console.log("Inline group data tests -> see above logs");
 	} catch (err) {
 		console.error("Error running tests:", err);
