@@ -380,7 +380,9 @@ const exportedMethods = {
 
         // Process each expense
         for (const expense of group.expenses) {
-            //console.log("\nProcessing expense:", expense.name);
+            // Skip archived expenses
+            if (expense.archived === true) continue;
+            
             const payeeId =
                 typeof expense.payee === "object"
                     ? expense.payee.toString()
@@ -388,7 +390,26 @@ const exportedMethods = {
             const cost = parseFloat(expense.cost);
             const numPayers = expense.payers.length;
             if (numPayers === 0) continue;
-            const amountPerPayer = parseFloat((cost / numPayers).toFixed(2));
+            
+            // Determine distribution type (default to evenly for backward compatibility)
+            const distributionType = expense.distributionType || "evenly";
+            
+            // Build a map of payerId -> amount owed for this expense
+            const payerOwedAmounts = {};
+            if (distributionType === "specific" && expense.payerShares && expense.payerShares.length > 0) {
+                // Use specific amounts from payerShares
+                expense.payerShares.forEach(share => {
+                    const sharePayerId = typeof share.payer === "object" ? share.payer.toString() : share.payer.toString();
+                    payerOwedAmounts[sharePayerId] = parseFloat(share.owed.toFixed(2));
+                });
+            } else {
+                // Evenly split (default)
+                const amountPerPayer = parseFloat((cost / numPayers).toFixed(2));
+                expense.payers.forEach(payer => {
+                    const payerId = typeof payer === "object" ? payer.toString() : payer.toString();
+                    payerOwedAmounts[payerId] = amountPerPayer;
+                });
+            }
 
             // Build a payments lookup for this expense (payerId -> paid amount)
             const paymentsLookup = {};
@@ -399,11 +420,8 @@ const exportedMethods = {
 
             //console.log("  Payee ID:", payeeId);
             //console.log("  Cost:", cost);
-            /* console.log(
-                "  Payers:",
-                expense.payers.map((p) => (typeof p === "object" ? p.toString() : p.toString()))
-            ); */
-            //console.log("  Amount per payer:", amountPerPayer);
+            //console.log("  Distribution Type:", distributionType);
+            //console.log("  Payer Owed Amounts:", payerOwedAmounts);
 
             // Each payer owes the payee their share minus any payments they've already made
             for (const payer of expense.payers) {
@@ -415,9 +433,10 @@ const exportedMethods = {
                     continue;
                 }
 
+                // Get the amount this payer owes (from payerOwedAmounts map)
+                const amountOwed = payerOwedAmounts[payerId] || 0;
                 const paidSoFar = paymentsLookup[payerId] || 0;
-                const owedForThisExpense = parseFloat((amountPerPayer - paidSoFar).toFixed(2));
-                //console.log(`    Payer ${payerId} already paid ${paidSoFar}, owes ${owedForThisExpense}`);
+                const owedForThisExpense = parseFloat(Math.max(0, amountOwed - paidSoFar).toFixed(2));
 
                 // If nothing owed, skip
                 if (owedForThisExpense <= 0) {

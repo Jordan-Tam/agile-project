@@ -69,6 +69,23 @@
             />
             <small class="form-text text-muted">Max file size: 5MB. Allowed: Images, PDFs, Office documents</small>
         </div>
+        
+        <div class="custom-card mb-3">
+            <label class="form-label">Distribution Type:</label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="distributionType" id="distributionEvenly" value="evenly" checked>
+                <label class="form-check-label" for="distributionEvenly">
+                    Evenly Split (Cost divided equally among all payers)
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="distributionType" id="distributionSpecific" value="specific">
+                <label class="form-check-label" for="distributionSpecific">
+                    Specific Amounts (Specify individual amounts per payer)
+                </label>
+            </div>
+        </div>
+
         <p>Payee:</p>
         {{#each group.groupMembers}}
         <div class="form-check mb-3">
@@ -77,13 +94,317 @@
         </div>
         {{/each}}
         <p>Payers:</p>
-        {{#each group.groupMembers}}
-        <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" value="{{_id}}" id="payer-{{userId}}" name="payers[]" />
-            <label class="form-check-label" for="{{userId}}">{{userId}}</label>
+        <div id="payersContainer">
+            {{#each group.groupMembers}}
+            <div class="payer-item mb-3" data-payer-id="{{_id}}">
+                <div class="form-check">
+                    <input class="form-check-input payer-checkbox" type="checkbox" value="{{_id}}" id="payer-{{userId}}" name="payers[]" />
+                    <label class="form-check-label" for="payer-{{userId}}">{{userId}}</label>
+                </div>
+                <div class="payer-amount-input" style="display: none; margin-left: 25px; margin-top: 5px;">
+                    <div class="input-group" style="max-width: 250px;">
+                        <span class="input-group-text">$</span>
+                        <input
+                            type="number"
+                            class="form-control"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            name="payerAmounts[{{_id}}]"
+                            id="payerAmount-{{_id}}"
+                            disabled
+                        />
+                    </div>
+                </div>
+            </div>
+            {{/each}}
         </div>
-        {{/each}}
+        
+        <div id="totalAmountDisplay" class="mb-3" style="display: none;">
+            <strong>Total: $<span id="totalAmount">0.00</span> / $<span id="expenseCost">{{form.cost}}</span></strong>
+            <div id="amountError" class="text-danger" style="display: none;">Sum of amounts must equal total cost!</div>
+        </div>
+        
         <button type="submit" class="btn btn-primary">Add Expense</button>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const distributionTypeRadios = document.querySelectorAll('input[name="distributionType"]');
+    const payerCheckboxes = document.querySelectorAll('.payer-checkbox');
+    const payerAmountInputs = document.querySelectorAll('.payer-amount-input');
+    const totalAmountDisplay = document.getElementById('totalAmountDisplay');
+    const totalAmountSpan = document.getElementById('totalAmount');
+    const expenseCostSpan = document.getElementById('expenseCost');
+    const amountErrorDiv = document.getElementById('amountError');
+    const costInput = document.getElementById('cost');
+    const form = document.getElementById('login-form');
+
+    // Get current distribution type
+    function getDistributionType() {
+        const checked = document.querySelector('input[name="distributionType"]:checked');
+        return checked ? checked.value : 'evenly';
+    }
+
+    // Update expense cost display when cost input changes
+    if (costInput) {
+        costInput.addEventListener('input', function() {
+            if (expenseCostSpan) {
+                expenseCostSpan.textContent = parseFloat(this.value || 0).toFixed(2);
+            }
+            if (getDistributionType() === 'specific') {
+                updateTotalAmount();
+            }
+        });
+    }
+
+    // Handle distribution type change
+    distributionTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const isSpecific = this.value === 'specific';
+            
+            // Show/hide amount inputs based on distribution type
+            payerCheckboxes.forEach(checkbox => {
+                const payerItem = checkbox.closest('.payer-item');
+                const amountInputDiv = payerItem.querySelector('.payer-amount-input');
+                const amountInput = payerItem.querySelector('input[name^="payerAmounts"]');
+                
+                if (isSpecific && checkbox.checked) {
+                    amountInputDiv.style.display = 'block';
+                    if (amountInput) {
+                        amountInput.disabled = false;
+                        amountInput.removeAttribute('disabled'); // Ensure it's not disabled
+                        amountInput.required = true;
+                    }
+                } else {
+                    amountInputDiv.style.display = 'none';
+                    if (amountInput) {
+                        amountInput.disabled = true;
+                        amountInput.required = false;
+                        amountInput.value = '';
+                    }
+                }
+            });
+
+            // Show/hide total amount display
+            if (isSpecific) {
+                totalAmountDisplay.style.display = 'block';
+                updateTotalAmount();
+            } else {
+                totalAmountDisplay.style.display = 'none';
+                amountErrorDiv.style.display = 'none';
+            }
+        });
+    });
+
+    // Handle payer checkbox changes
+    payerCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const payerItem = this.closest('.payer-item');
+            const amountInputDiv = payerItem.querySelector('.payer-amount-input');
+            const amountInput = payerItem.querySelector('input[name^="payerAmounts"]');
+            
+            if (getDistributionType() === 'specific') {
+                if (this.checked) {
+                    amountInputDiv.style.display = 'block';
+                    if (amountInput) {
+                        amountInput.disabled = false;
+                        amountInput.removeAttribute('disabled'); // Ensure it's not disabled
+                        amountInput.required = true;
+                    }
+                } else {
+                    amountInputDiv.style.display = 'none';
+                    if (amountInput) {
+                        amountInput.disabled = true;
+                        amountInput.required = false;
+                        amountInput.value = '';
+                    }
+                }
+                updateTotalAmount();
+            }
+        });
+    });
+
+    // Handle amount input changes
+    payerAmountInputs.forEach(div => {
+        const amountInput = div.querySelector('input[type="number"]');
+        if (amountInput) {
+            amountInput.addEventListener('input', function() {
+                updateTotalAmount();
+            });
+        }
+    });
+
+    // Calculate and display total amount
+    function updateTotalAmount() {
+        const expenseCost = parseFloat(costInput.value || 0);
+        let total = 0;
+
+        payerCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const payerItem = checkbox.closest('.payer-item');
+                const amountInput = payerItem.querySelector('input[name^="payerAmounts"]');
+                if (amountInput && amountInput.value) {
+                    total += parseFloat(amountInput.value || 0);
+                }
+            }
+        });
+
+        if (totalAmountSpan) {
+            totalAmountSpan.textContent = total.toFixed(2);
+        }
+
+        // Validate total
+        const isValid = Math.abs(total - expenseCost) < 0.01;
+        if (amountErrorDiv) {
+            amountErrorDiv.style.display = isValid ? 'none' : 'block';
+        }
+
+        // Update total display color
+        if (totalAmountDisplay) {
+            totalAmountDisplay.style.color = isValid ? 'black' : 'red';
+        }
+
+        return isValid;
+    }
+
+    // Validate form before submission and ensure all fields are enabled
+    form.addEventListener('submit', function(e) {
+        // PREVENT DEFAULT FIRST to ensure we can modify form before submission
+        e.preventDefault();
+        
+        const distType = getDistributionType();
+        
+        console.log('=== FORM SUBMISSION DEBUG ===');
+        console.log('distributionType:', distType);
+        
+        // Make sure distributionType radio is checked (should already be, but ensure it)
+        const checkedRadio = document.querySelector('input[name="distributionType"]:checked');
+        if (!checkedRadio) {
+            console.error('No distributionType radio selected! Defaulting to evenly');
+            const evenlyRadio = document.getElementById('distributionEvenly');
+            if (evenlyRadio) {
+                evenlyRadio.checked = true;
+            }
+        } else {
+            console.log('Checked radio value:', checkedRadio.value);
+            console.log('Checked radio name:', checkedRadio.name);
+        }
+
+        // Enable all disabled inputs that should be submitted BEFORE validation
+        if (distType === 'specific') {
+            console.log('Processing specific distribution...');
+            
+            // Enable only the payer amount inputs for checked payers
+            payerCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    const payerItem = checkbox.closest('.payer-item');
+                    const amountInput = payerItem.querySelector('input[name^="payerAmounts"]');
+                    if (amountInput) {
+                        // CRITICAL: Remove disabled attribute completely and ensure name is set
+                        amountInput.removeAttribute('disabled');
+                        amountInput.disabled = false;
+                        // Make sure the name attribute is correct
+                        const payerId = checkbox.value;
+                        amountInput.setAttribute('name', `payerAmounts[${payerId}]`);
+                        console.log('Enabled input for payer:', payerId, 'name:', amountInput.name, 'amount:', amountInput.value);
+                    }
+                } else {
+                    // Remove name attribute from unchecked payers so they're not sent
+                    const payerItem = checkbox.closest('.payer-item');
+                    const amountInput = payerItem.querySelector('input[name^="payerAmounts"]');
+                    if (amountInput) {
+                        amountInput.removeAttribute('name');
+                    }
+                }
+            });
+        } else {
+            // For evenly, remove all payerAmounts inputs from submission
+            console.log('Processing evenly distribution...');
+            payerAmountInputs.forEach(div => {
+                const amountInput = div.querySelector('input[type="number"]');
+                if (amountInput) {
+                    amountInput.removeAttribute('name');
+                }
+            });
+        }
+        
+        // Enable ALL remaining disabled inputs
+        const allDisabledInputs = form.querySelectorAll('input[disabled], select[disabled], textarea[disabled]');
+        allDisabledInputs.forEach(input => {
+            input.removeAttribute('disabled');
+            input.disabled = false;
+        });
+        
+        console.log('All inputs enabled. Form data will be submitted...');
+
+        // Now validate
+        if (distType === 'specific') {
+            const isValid = updateTotalAmount();
+            if (!isValid) {
+                alert('The sum of payer amounts must equal the total cost!');
+                return false;
+            }
+
+            // Ensure all checked payers have amounts
+            let allHaveAmounts = true;
+            let missingPayer = null;
+            payerCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    const payerItem = checkbox.closest('.payer-item');
+                    const amountInput = payerItem.querySelector('input[name^="payerAmounts"]');
+                    if (!amountInput || !amountInput.value || parseFloat(amountInput.value) <= 0) {
+                        allHaveAmounts = false;
+                        missingPayer = checkbox.value;
+                    }
+                }
+            });
+
+            if (!allHaveAmounts) {
+                alert(`All selected payers must have an amount entered! Missing amount for payer: ${missingPayer}`);
+                return false;
+            }
+        }
+        
+        // All validation passed - submit the form
+        console.log('Validation passed. Form will submit now...');
+        
+        // Create a hidden input to ensure distributionType is definitely sent
+        let hiddenDistType = document.querySelector('input[name="distributionType"][type="hidden"]');
+        if (!hiddenDistType) {
+            hiddenDistType = document.createElement('input');
+            hiddenDistType.type = 'hidden';
+            hiddenDistType.name = 'distributionType';
+            form.appendChild(hiddenDistType);
+        }
+        hiddenDistType.value = distType;
+        console.log('Set hidden distributionType input to:', distType);
+        
+        // Submit the form - this will work with file uploads
+        form.submit();
+    });
+
+    // Initialize: if specific is selected on page load (from error), show inputs
+    if (getDistributionType() === 'specific') {
+        payerCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const payerItem = checkbox.closest('.payer-item');
+                const amountInputDiv = payerItem.querySelector('.payer-amount-input');
+                const amountInput = payerItem.querySelector('input[name^="payerAmounts"]');
+                if (amountInputDiv) {
+                    amountInputDiv.style.display = 'block';
+                }
+                if (amountInput) {
+                    amountInput.disabled = false;
+                    amountInput.required = true;
+                }
+            }
+        });
+        totalAmountDisplay.style.display = 'block';
+        updateTotalAmount();
+    }
+});
+</script>
+
 {{> custom-card-script initial_width_num=3}}

@@ -43,7 +43,7 @@ const exportedMethods = {
 				signupDate: nowISO,
 				lastLogin: nowISO,
 				pinnedGroups: [],
-				theme: null  // Default to light mode (null = no preference = light)
+				theme: 'light'  // Default to light mode
 			};
 
 			const insert = await users.insertOne(doc);
@@ -87,7 +87,7 @@ const exportedMethods = {
 		const nowISO = new Date().toISOString();
 		await usersCol.updateOne({ userId }, { $set: { lastLogin: nowISO } });
 
-		// Return user without password hash
+			// Return user without password hash
 		return {
 			_id: user._id.toString(),
 			firstName: user.firstName,
@@ -95,7 +95,8 @@ const exportedMethods = {
 			userId: user.userId,
 			role: user.role,
 			signupDate: user.signupDate,
-			lastLogin: nowISO
+			lastLogin: nowISO,
+			theme: user.theme || 'light' // Default to 'light' if null/undefined
 		};
 	},
 
@@ -119,7 +120,7 @@ const exportedMethods = {
 			signupDate: user.signupDate,
 			lastLogin: user.lastLogin,
 			pinnedGroups: user.pinnedGroups || [],
-			theme: user.theme || null
+			theme: user.theme || 'light' // Default to 'light' if null/undefined
 		};
 	},
 
@@ -145,7 +146,7 @@ const exportedMethods = {
 			signupDate: user.signupDate,
 			lastLogin: user.lastLogin,
 			pinnedGroups: user.pinnedGroups || [],
-			theme: user.theme || null
+			theme: user.theme || 'light' // Default to 'light' if null/undefined
 		};
 	},
 
@@ -345,9 +346,54 @@ const exportedMethods = {
 			{ returnOriginal: "false" }
 		);
 		const result = updateInfo.value || updateInfo;
-		if (!result) throw "Failed to pin group";
+		if (!result) throw "Failed to unpin group";
 		return result;
 	},
+
+	async updateTheme(userId, theme) {
+		userId = checkId(userId, "User ID");
+		
+		// Validate theme value
+		if (theme !== null && theme !== 'light' && theme !== 'dark') {
+			throw "Theme must be 'light', 'dark', or null";
+		}
+
+		// Default to 'light' if null
+		const themeToSet = theme || 'light';
+
+		const usersCol = await usersCollection();
+		
+		// First verify user exists
+		const userExists = await usersCol.findOne({ _id: new ObjectId(userId) });
+		if (!userExists) {
+			throw "User not found";
+		}
+		
+		const updateInfo = await usersCol.findOneAndUpdate(
+			{ _id: new ObjectId(userId) },
+			{ $set: { theme: themeToSet } },
+			{ returnOriginal: "false" }
+		);
+		
+		// Handle both return structures (value property or direct result)
+		const result = updateInfo.value || updateInfo;
+		if (!result) {
+			throw "Failed to update theme";
+		}
+
+		const updatedUser = result;
+		return {
+			_id: updatedUser._id.toString(),
+			firstName: updatedUser.firstName,
+			lastName: updatedUser.lastName,
+			userId: updatedUser.userId,
+			role: updatedUser.role,
+			signupDate: updatedUser.signupDate,
+			lastLogin: updatedUser.lastLogin,
+			pinnedGroups: updatedUser.pinnedGroups || [],
+			theme: updatedUser.theme || 'light'
+		};
+	}
 
 }
 

@@ -33,16 +33,17 @@ router.post("/", async (req, res) => {
 			throw "Passwords do not match.";
 		}
 
-		await usersData.createUser(firstName, lastName, userId, password);
+		const newUser = await usersData.createUser(firstName, lastName, userId, password);
 
 		const nowISO = new Date().toISOString();
 		req.session.user = {
+			_id: newUser._id,
 			firstName,
 			lastName,
 			userId,
 			signupDate: nowISO,
 			lastLogin: new Date().toLocaleString(),
-			theme: null  // New users default to light mode
+			theme: newUser.theme || 'light' // New users default to light mode
 		};
 
 		return res.status(201).render("register-success", {
